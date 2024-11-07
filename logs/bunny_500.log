@@ -1,0 +1,28 @@
+Using config file ./data/bunny_500.cfg
+ Using input file:       ./data/bunny_5000.o3d
+ Using root translation: (0, 0, 1.38803)
+ Using output prefix:    ./meshes/bunny_dense
+ Using resolution:       500
+ Using max iterations:   5
+ Reading text file ./data/bunny_5000.o3d.txt ...  Read in res: 97 97 97
+ Read in center: (0, 0, 0)
+ Read in lengths: (3.06186, 3.06186, 3.06186)
+ done. 
+ Top powers sum to:    783.897
+ Bottom powers sum to: 538.234
+ Scaled Top powers sum to:    251.998
+ Scaled Bottom powers sum to: 89.3455
+ Exponential scaling: 2.04172e-39
+ Top mean root:    (-0.182738, -0.142917, -0.164589, 0)
+ Bottom mean root: (-0.275366, -0.100777, -0.234204, 0)
+ New center: (0, 0, 0)
+ New lengths: (3.06186, 3.06186, 3.06186)
+ New rotation: (1, 0, 0, 0)
+ Checkpoint frequency (in seconds): 14400
+ Not recentering
+ Allocating initial fields ...  done. 
+ Rendering root Z translations 
+ Using the translation delta: 0 quaternion version: (0, 0, 1.38803, 0)
+ New delta: (0, 0, 1.38803, 0)
+ long long int is: 8 bytes, 64 bits.
+ NO cache found.
