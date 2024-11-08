@@ -1,2 +1,2 @@
-# Fractal_Paint
+# Ocean Rendering
 GPU Final Project
