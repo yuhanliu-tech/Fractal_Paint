@@ -14,12 +14,11 @@
 using namespace std;
 
 int main(int argc, char *argv[]) {
-    if(argc != 12 && argc != 13) {
+    if(argc != 9) {
         cout << "USAGE: " << endl;
         cout << "To create a self-similar Julia set from a distance field and portal description file:" << endl;
         cout << " " << argv[0] << " <SDF *.f3d> <portals *.txt> <versor octaves> <versor scale> <output resolution> <alpha> <beta> <output *.obj>" << endl << endl;
-        //                            argv[1]        argv[2]        argv[3]          argv[4]        argv[5]        argv[6] argv[7]     argv[11]    
-
+        //                            argv[1]        argv[2]        argv[3]          argv[4]        argv[5]        argv[6] argv[7]     argv[8]    
         exit(0);
     }
 
@@ -48,6 +47,11 @@ int main(int argc, char *argv[]) {
     Real beta = atof(argv[7]);
 
     int res = atoi(argv[5]);
+
+    // Offset roots and distance field to reproduce QUIJIBO dissolution
+    // effect - this is optional, and for all our results in the paper was zero.
+    VEC3F offset3D(0.f, 0.f, 0.f);
+    distField.mapBox.setCenter(offset3D);
 
     // --------------------------------------------------------------------------------------------------------------------------------
 
@@ -126,8 +130,10 @@ int main(int argc, char *argv[]) {
 
     // FIXME: CUDA parallelization
 
+    std::cout << "marching cubes" << std::endl;
     Mesh m;
     MC::march_cubes(&vg, m, true);
+    std::cout << "marched cubes" << std::endl;
 
     // Transforming mesh to grid field coords ------------------------------------------------------------------------
 
@@ -140,7 +146,9 @@ int main(int argc, char *argv[]) {
         m.vertices[i] = vg.gridToFieldCoords(v);
     }
 
-    m.writeOBJ(argv[11]);
+    std::cout << "grid2field complete" << std::endl;
+
+    m.writeOBJ(argv[8]);
 
     return 0;
 }

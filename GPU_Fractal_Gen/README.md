@@ -4,6 +4,8 @@ Based on 2024 SIGGRAPH Publication [Into the Portal: Directable Fractal Self-Sim
 
 File directory breakdown:
 
+**Wait this is all inaccurate right now tell Yuhan to fix it**
+
 ### Repo Structure
 ```
 [ ] (GPU_Fractal_Gen)

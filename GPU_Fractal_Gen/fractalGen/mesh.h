@@ -76,6 +76,9 @@ public:
     }
 
     void writeOBJ(std::string filename) {
+
+        std::cout << "Begin writing OBJ..." << filename << std::endl;
+
         std::ofstream out;
         out.open(filename);
         if (out.is_open() == false)
