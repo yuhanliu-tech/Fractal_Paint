@@ -313,7 +313,7 @@ QUATERNION POLYNOMIAL_4D::evaluateSecondDerivative(const QUATERNION& point) cons
   assert(_totalRoots > 0);
 
   // compute all the needed powers
-  QUATERNION powers[_totalRoots];
+  std::vector<QUATERNION> powers(_totalRoots);
   powers[0] = point;
   for (int x = 1; x < _totalRoots; x++)
     powers[x] = powers[x - 1] * point;
@@ -333,7 +333,7 @@ void POLYNOMIAL_4D::evaluateMultiple(const QUATERNION& point, QUATERNION& poly, 
   assert(_totalRoots > 0);
 
   // compute all the needed powers
-  QUATERNION powers[_totalRoots];
+  std::vector<QUATERNION> powers(_totalRoots);
   powers[0] = point;
   for (int x = 1; x < _totalRoots; x++)
     powers[x] = powers[x - 1] * point;
@@ -356,7 +356,7 @@ void POLYNOMIAL_4D::evaluateMultiple(const QUATERNION& point, QUATERNION& poly, 
   assert(_totalRoots > 0);
 
   // compute all the needed powers
-  QUATERNION powers[_totalRoots];
+  std::vector<QUATERNION> powers(_totalRoots);
   powers[0] = point;
   for (int x = 1; x < _totalRoots; x++)
     powers[x] = powers[x - 1] * point;
@@ -390,7 +390,7 @@ void POLYNOMIAL_4D::evaluateRational(const POLYNOMIAL_4D& top, const POLYNOMIAL_
   const int maxRoots = (topRoots > bottomRoots) ? topRoots : bottomRoots;
 
   // compute all the needed powers
-  QUATERNION powers[maxRoots];
+  std::vector<QUATERNION> powers(maxRoots);
   powers[0] = point;
   for (int x = 1; x < maxRoots; x++)
     powers[x] = powers[x - 1] * point;

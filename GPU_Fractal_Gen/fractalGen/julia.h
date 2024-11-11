@@ -6,7 +6,7 @@
 #include "field.h"
 #include "Quaternion/QUATERNION.h"
 #include "Quaternion/POLYNOMIAL_4D.h"
-#include "PerlinNoise/PerlinNoise.h"
+#include "PerlinNoise.h"
 
 class QuatMap {
 public:

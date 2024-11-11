@@ -7,6 +7,7 @@ set(headers
     "triangle.h"
     "Quaternion/POLYNOMIAL_4D.h"
     "Quaternion/QUATERNION.h"
+    "PerlinNoise.h"
     )
 
 set(sources
