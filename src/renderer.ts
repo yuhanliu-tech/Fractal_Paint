@@ -1,5 +1,4 @@
 import { Scene } from './stage/scene';
-import { Lights } from './stage/lights';
 import { Camera } from './stage/camera';
 import { Stage } from './stage/stage';
 import { FrameStats } from './stage/framestats';
@@ -104,7 +103,6 @@ export const vertexBufferLayout: GPUVertexBufferLayout = {
 
 export abstract class Renderer {
     protected scene: Scene;
-    protected lights: Lights;
     protected camera: Camera;
     protected stats: Stats;
 
@@ -114,7 +112,6 @@ export abstract class Renderer {
 
     constructor(stage: Stage) {
         this.scene = stage.scene;
-        this.lights = stage.lights;
         this.camera = stage.camera;
         this.stats = stage.stats;
         this.frameStats = stage.frameStats;
@@ -130,7 +127,6 @@ export abstract class Renderer {
 
     private frameOne(time: DOMHighResTimeStamp) {
         this.prevTime = time;
-        this.lights.onFrame(time);
         this.stats.begin();
         this.draw();
         this.stats.end();
@@ -142,7 +138,6 @@ export abstract class Renderer {
     private onFrame(time: DOMHighResTimeStamp) {
         let deltaTime = time - this.prevTime;
         this.camera.onFrame(deltaTime);
-        this.lights.onFrame(time);
 
         this.stats.begin();
 

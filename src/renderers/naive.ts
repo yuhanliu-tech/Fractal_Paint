@@ -22,11 +22,6 @@ export class NaiveRenderer extends renderer.Renderer {
                     visibility: GPUShaderStage.VERTEX,
                     buffer: { type: "uniform" }
                 },
-                { // lightSet
-                    binding: 1,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: { type: "read-only-storage" }
-                }
             ]
         });
 
@@ -37,10 +32,6 @@ export class NaiveRenderer extends renderer.Renderer {
                 {
                     binding: 0,
                     resource: { buffer: this.camera.uniformsBuffer }
-                },
-                {
-                    binding: 1,
-                    resource: { buffer: this.lights.lightSetStorageBuffer }
                 }
             ]
         });
