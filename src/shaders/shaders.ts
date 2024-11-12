@@ -13,6 +13,10 @@ import clusteredDeferredFullscreenFragRaw from './clustered_deferred_fullscreen.
 
 import clusteringComputeRaw from './clustering.cs.wgsl?raw';
 
+import oceanSurfaceVertRaw from './ocean_surface.vs.wgsl?raw';
+import oceanSurfaceFragRaw from './ocean_surface.fs.wgsl?raw';
+import oceanSurfaceComputeRaw from './ocean_surface.cs.wgsl?raw';
+
 // CONSTANTS (for use in shaders)
 // =================================
 
@@ -33,7 +37,7 @@ export const constants = {
     clusterY: 16,
     clusterZ: 16,
 
-    maxClusterLights: 1024
+    maxClusterLights: 1024,
 };
 
 // =================================
@@ -58,3 +62,7 @@ export const clusteredDeferredFullscreenVertSrc: string = processShaderRaw(clust
 export const clusteredDeferredFullscreenFragSrc: string = processShaderRaw(clusteredDeferredFullscreenFragRaw);
 
 export const clusteringComputeSrc: string = processShaderRaw(clusteringComputeRaw);
+
+export const oceanSurfaceVertSrc: string = processShaderRaw(oceanSurfaceVertRaw);
+export const oceanSurfaceFragSrc: string = processShaderRaw(oceanSurfaceFragRaw);
+export const oceanSurfaceComputeSrc: string = processShaderRaw(oceanSurfaceComputeRaw);
