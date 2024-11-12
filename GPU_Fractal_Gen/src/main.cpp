@@ -6,6 +6,8 @@
 
 #include "fractalGen/SETTINGS.h"
 
+#include "fractalGen/CudaMC.h" // parallelized marching cubes
+
 #include "fractalGen/MC.h"
 #include "fractalGen/mesh.h"
 #include "fractalGen/field.h"
