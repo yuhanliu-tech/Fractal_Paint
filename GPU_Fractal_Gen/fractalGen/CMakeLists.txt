@@ -8,12 +8,14 @@ set(headers
     "Quaternion/POLYNOMIAL_4D.h"
     "Quaternion/QUATERNION.h"
     "PerlinNoise.h"
+    "CudaMC.h"
     )
 
 set(sources
     "triangle.cpp"
     "Quaternion/POLYNOMIAL_4D.cpp"
     "Quaternion/QUATERNION.cpp"
+    "CudaMC.cu"
     )
 
 list(SORT headers)

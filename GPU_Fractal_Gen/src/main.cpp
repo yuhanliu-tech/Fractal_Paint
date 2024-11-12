@@ -114,8 +114,6 @@ int main(int argc, char *argv[]) {
     }
     portalFile.close();
 
-    // FIXME: CUDA parallelization? 
-
     PortalMap  pm(&vm, portalCenters, portalRotations, portalRadius, portalScale, &mask_j);
     R3JuliaSet julia(&pm, 7, 10);
 

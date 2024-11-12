@@ -58,25 +58,6 @@ QUATERNION& QUATERNION::operator=(const VEC3F& vec)
   return *this;
 }
 
-/*
-// SSE for this one has been lifted from Eigen!
-#define SWIZZLE(v,p,q,r,s) \
-  (_mm_castsi128_ps(_mm_shuffle_epi32( _mm_castps_si128(v), ((s)<<6|(r)<<4|(q)<<2|(p)))))
-QUATERNION operator*(const QUATERNION& left, const QUATERNION& right)
-{
-  const __m128 mask = _mm_castsi128_ps(_mm_setr_epi32(0,0,0,0x80000000));
-  const __m128& a = left.v();
-  const __m128& b = right.v();
-  const __m128 flip1 = _mm_xor_ps(_mm_mul_ps(SWIZZLE(a,1,2,0,2),
-                                             SWIZZLE(b,2,0,1,2)), mask);
-  const __m128 flip2 = _mm_xor_ps(_mm_mul_ps(SWIZZLE(a,3,3,3,1),
-                                             SWIZZLE(b,0,1,2,1)), mask);
-  return QUATERNION(_mm_add_ps(_mm_sub_ps(_mm_mul_ps(a,SWIZZLE(b,3,3,3,3)),
-                                          _mm_mul_ps(SWIZZLE(a,2,0,1,0), SWIZZLE(b,1,2,0,0))),
-                                          _mm_add_ps(flip1,flip2)));
-}
-*/
-
 QUATERNION operator*(const QUATERNION& left, const QUATERNION& right)
 {
   QUATERNION final;
