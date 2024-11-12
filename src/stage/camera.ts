@@ -18,11 +18,11 @@ class CameraUniforms {
         this.floatView.set(mat, 16 * 2);
     }
 
-    set xScale(n : number) {
+    set xScale(n: number) {
         this.floatView[16 * 3] = n;
     }
 
-    set yScale(n : number) {
+    set yScale(n: number) {
         this.floatView[16 * 3 + 1] = n;
     }
 
@@ -54,7 +54,7 @@ export class Camera {
 
     keys: { [key: string]: boolean } = {};
 
-    constructor () {
+    constructor() {
         this.uniformsBuffer = device.createBuffer({
             label: "uniforms",
             size: this.uniforms.buffer.byteLength,
@@ -130,7 +130,7 @@ export class Camera {
         }
 
         let moveSpeed = this.moveSpeed * deltaTime;
-        const moveSpeedMultiplier = 3;
+        const moveSpeedMultiplier = 10;
         if (this.keys['shift']) {
             moveSpeed *= moveSpeedMultiplier;
         }
@@ -160,7 +160,7 @@ export class Camera {
         this.uniforms.near = Camera.nearPlane;
         this.uniforms.logfarovernear = Math.log(Camera.farPlane / Camera.nearPlane);
         // TODO-2: write to extra buffers needed for light clustering here
-        
+
 
         device.queue.writeBuffer(this.uniformsBuffer, 0, this.uniforms.buffer);
     }

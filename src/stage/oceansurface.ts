@@ -3,8 +3,9 @@ import * as shaders from '../shaders/shaders';
 import * as renderer from '../renderer';
 import { OceanSurfaceChunk } from "./oceansurfacechunk";
 
-const quad_res = [512, 512];
-const quad_dims = [512, 512];
+const chunk_size = 256;
+const quad_res = [chunk_size, chunk_size];
+const quad_dims = [chunk_size, chunk_size];
 
 export const vertexBufferLayout: GPUVertexBufferLayout = {
     arrayStride: 32,
@@ -41,7 +42,7 @@ export class OceanSurface {
                     visibility: GPUShaderStage.COMPUTE,
                     storageTexture: {
                         access: "write-only",
-                        format : "r32float"
+                        format: "r32float"
                     }
                 },
                 {   // normal
@@ -49,7 +50,7 @@ export class OceanSurface {
                     visibility: GPUShaderStage.COMPUTE,
                     storageTexture: {
                         access: "write-only",
-                        format : "rgba8unorm"
+                        format: "rgba8unorm"
                     }
                 }
             ]
@@ -61,12 +62,12 @@ export class OceanSurface {
                 {
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX,
-                    texture: {sampleType: "unfilterable-float"}
+                    texture: { sampleType: "unfilterable-float" }
                 },
                 {
                     binding: 1,
                     visibility: GPUShaderStage.FRAGMENT,
-                    texture: {sampleType: "float"}
+                    texture: { sampleType: "float" }
                 },
                 {
                     binding: 2,
@@ -134,7 +135,7 @@ export class OceanSurface {
         this.indexBuffer = renderer.device.createBuffer({
             size: inds.length * 4,
             usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-            mappedAtCreation : true
+            mappedAtCreation: true
         });
 
         new Uint32Array(this.indexBuffer.getMappedRange()).set(inds);
