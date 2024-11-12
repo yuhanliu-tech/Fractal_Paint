@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
         cout << "USAGE: " << endl;
         cout << "To create a self-similar Julia set from a distance field and portal description file:" << endl;
         cout << " " << argv[0] << " <SDF *.f3d> <portals *.txt> <versor octaves> <versor scale> <output resolution> <alpha> <beta> <output *.obj>" << endl << endl;
-        //                            argv[1]        argv[2]        argv[3]          argv[4]        argv[5]        argv[6] argv[7]     argv[8]    
+        //                            argv[1]        argv[2]        argv[3]          argv[4]        argv[5]         argv[6] argv[7]   argv[8]    
         exit(0);
     }
 
@@ -26,26 +26,26 @@ int main(int argc, char *argv[]) {
     ArrayGrid3D distFieldCoarse(argv[1]);
     PRINTF("Got distance field with res %dx%dx%d\n", distFieldCoarse.xRes, distFieldCoarse.yRes, distFieldCoarse.zRes);
 
-    // Create interpolation grid (smooth it out) --------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Create interpolation grid (smooth it out)
+    // -------------------------------------------------------------------------------------------------------------------------
 
     // description: 
     // create interpolation grid smooths distance field, involves sampling & calculating new values for dense 3D grid
     
-    // FIXME: CUDA parallelization
-
     InterpolationGrid distField(&distFieldCoarse, InterpolationGrid::LINEAR);
     distField.mapBox.setCenter(VEC3F(0,0,0));
 
+    // FIXME: don't hard-code this lol
     PRINT("NOTE: Setting simulation bounds to hard-coded values (not from distance field)");
     distField.mapBox.min() = VEC3F(-0.5, -0.5, -0.5);
     distField.mapBox.max() = VEC3F(0.5, 0.5, 0.5);
 
-    // ---------------------------------------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Set variables in preparation to compute Julia set
 
-    // Now we actually compute the Julia set
     Real alpha = atof(argv[6]);
     Real beta = atof(argv[7]);
-
     int res = atoi(argv[5]);
 
     // Offset roots and distance field to reproduce QUIJIBO dissolution
@@ -53,12 +53,8 @@ int main(int argc, char *argv[]) {
     VEC3F offset3D(0.f, 0.f, 0.f);
     distField.mapBox.setCenter(offset3D);
 
-    // --------------------------------------------------------------------------------------------------------------------------------
-
-    // Set up simulation bounds, taking octree zoom into account
+    // Set up simulation bounds
     AABB boundsBox(distField.mapBox.min(), distField.mapBox.max() + VEC3F(0.25, 0.25, 0.25));
-
-    // -------------------------------------------------------------------------------------------------------------------------
 
     int versor_octaves = atoi(argv[3]);
     Real versor_scale   = atof(argv[4]);
@@ -66,12 +62,12 @@ int main(int argc, char *argv[]) {
     PRINTF("vo=%s; vs=%s\n",argv[3], argv[4]);
     PRINTF("Computing Julia set with resolution %d, a=%f, b=%f, v. octaves=%d, v. scale=%f, offset=(%f, %f, %f)\n", res, alpha, beta, versor_octaves, versor_scale);
 
-    // Versor field generation using noise ---------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Versor field generation using noise
+    // -------------------------------------------------------------------------------------------------------------------------
     
     // description: 
     // noise-based versor field calculation, each voxel can independently sample from noise field in kernels
-    
-    // FIXME: CUDA parallelization
 
     NoiseVersor  versor(versor_octaves, versor_scale);
 
@@ -88,7 +84,6 @@ int main(int argc, char *argv[]) {
     Real portalScale;
     VEC3F portalLocation;
     AngleAxis<Real> portalRotation;
-
     ifstream portalFile(argv[2]);
     if (portalFile.is_open()) {
         string line;
@@ -119,12 +114,16 @@ int main(int argc, char *argv[]) {
     }
     portalFile.close();
 
+    // FIXME: CUDA parallelization? 
+
     PortalMap  pm(&vm, portalCenters, portalRotations, portalRadius, portalScale, &mask_j);
     R3JuliaSet julia(&pm, 7, 10);
 
     VirtualGrid3DLimitedCache vg(res, res, res, boundsBox.min(), boundsBox.max(), &julia);
 
-    // marching cubes to generate mesh -------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------------------------
+    // marching cubes to generate mesh
+    // -------------------------------------------------------------------------------------------------------------------------
 
     // description: evaluate each voxel in 3D grid to determine surface intersections
 
@@ -135,7 +134,9 @@ int main(int argc, char *argv[]) {
     MC::march_cubes(&vg, m, true);
     std::cout << "marched cubes" << std::endl;
 
-    // Transforming mesh to grid field coords ------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Transforming mesh to grid field coords 
+    // -------------------------------------------------------------------------------------------------------------------------
 
     // FIXME: CUDA parallelization?
 

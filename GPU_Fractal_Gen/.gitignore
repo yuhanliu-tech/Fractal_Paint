@@ -25,7 +25,8 @@ build
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
@@ -191,7 +192,6 @@ install_manifest.txt
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
@@ -249,7 +249,6 @@ x86/
 build/
 bld/
 [Bb]in/
-[Oo]bj/
 
 # Visual Studio 2015 cache/options directory
 .vs/
@@ -278,7 +277,6 @@ artifacts/
 *_i.h
 *.ilk
 *.meta
-*.obj
 *.pch
 *.pdb
 *.pgc
