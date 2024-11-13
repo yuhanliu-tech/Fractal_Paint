@@ -3,9 +3,8 @@ import * as shaders from '../shaders/shaders';
 import * as renderer from '../renderer';
 import { OceanSurfaceChunk } from "./oceansurfacechunk";
 
-const chunk_size = 256;
+const chunk_size = 512;
 const quad_res = [chunk_size, chunk_size];
-const quad_dims = [chunk_size, chunk_size];
 
 export const vertexBufferLayout: GPUVertexBufferLayout = {
     arrayStride: 32,
@@ -66,7 +65,7 @@ export class OceanSurface {
             entries: [
                 { // displacement
                     binding: 0,
-                    visibility: GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, // FIXME: remove fragment here
                     texture: { sampleType: "unfilterable-float" }
                 },
                 { // normals
@@ -111,8 +110,8 @@ export class OceanSurface {
         const verts = [];
         for (let x = 0; x < quad_res[0]; x++) {
             for (let y = 0; y < quad_res[0]; y++) {
-                verts.push((x / quad_res[0] - 0.5) * quad_dims[0]);
-                verts.push((y / quad_res[1] - 0.5) * quad_dims[1]);
+                verts.push(x);
+                verts.push(y);
             }
         }
 

@@ -48,7 +48,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let uv = vec2<f32>(x, y) + world_position;
     let noise = perlinNoise(uv / 2.0f);
     
-    textureStore(displacementMap, globalIdx.xy, vec4(sin(x), 0, 0, 0));
-    textureStore(normalMap, globalIdx.xy, vec4f(noise, 0, 0, 1));
+    textureStore(displacementMap, globalIdx.xy, vec4((sin(uv.x * 0.1) + 1) / 2, 0, 0, 0));
+    textureStore(normalMap, globalIdx.xy, vec4f(noise, 0, 1, 1));
 }
 

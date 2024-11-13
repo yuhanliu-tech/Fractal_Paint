@@ -12,14 +12,25 @@ struct VertexOutput
 {
     @builtin(position) fragPos: vec4f,
     @location(0) pos: vec3f,
+    @location(1) texCoord: vec2f,
 }
 
 @vertex
 fn main(in: VertexInput) -> VertexOutput
 {
-    let modelPos = vec4(in.pos.x, 0, in.pos.y, 1);
+    let displacement = textureLoad(displacementMap, vec2<i32>(in.pos), 0).x;
 
     var out: VertexOutput;
+    out.texCoord = in.pos;
+
+    let modelPos = vec4f(
+        in.pos.x - 256 + cameraUniforms.cameraPos.x,
+        // 0,
+        f32(displacement) * 10,
+        in.pos.y - 256 + cameraUniforms.cameraPos.z,
+        1
+    );
+
     out.fragPos = cameraUniforms.viewProj * modelPos;
     out.pos = modelPos.xyz / modelPos.w;
     return out;
