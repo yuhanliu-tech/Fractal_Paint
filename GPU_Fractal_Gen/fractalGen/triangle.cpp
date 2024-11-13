@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "triangle.h"
 #include "SETTINGS.h"
+#include <assert.h>
 #include <algorithm>
 
 static VEC3F cross(VEC3F a, VEC3F b) {

@@ -17,29 +17,30 @@
 #include <mutex>
 
 // Marching Cube includes
-//#include "SETTINGS.h"
+#include "SETTINGS.h"
 #include "mesh.h"
-//#include "field.h"
+#include "field.h"
 
 void checkCUDAErrorFn(const char* msg, const char* file = NULL, int line = -1);
 
 
 namespace CudaMC {
 
-    static inline Real mc_internalLength2(const VEC3F& v)
+    
+    inline Real mc_internalLength2(const VEC3F& v)
     {
         return v.x() * v.x() + v.y() * v.y() + v.z() * v.z();
     }
-    static inline Real mc_internalLength(const VEC3F& v)
+    inline Real mc_internalLength(const VEC3F& v)
     {
         return std::sqrt(mc_internalLength2(v));
     }
-    static inline VEC3F mc_internalNormalize(const VEC3F& v)
+    inline VEC3F mc_internalNormalize(const VEC3F& v)
     {
         Real vv = mc_internalLength(v);
         return VEC3F(v.x() / vv, v.y() / vv, v.z() / vv);
     }
-    static inline VEC3F mc_internalCross(const VEC3F& v1, const VEC3F& v2)
+    inline VEC3F mc_internalCross(const VEC3F& v1, const VEC3F& v2)
     {
         return VEC3F(v1.y() * v2.z() - v1.z() * v2.y(), v1.z() * v2.x() - v1.x() * v2.z(), v1.x() * v2.y() - v1.y() * v2.x());
     }
@@ -50,8 +51,9 @@ namespace CudaMC {
 
     // ------------------------------------------
 
+    void setDefaultArraySizes(uint vertSize, uint normSize, uint triSize);
+    
 
-    void placeholder(int N);
 
 
 }

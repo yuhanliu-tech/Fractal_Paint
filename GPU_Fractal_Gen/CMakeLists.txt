@@ -25,10 +25,10 @@ if(UNIX)
     include_directories("${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}")
 endif(UNIX)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/)
+
 add_subdirectory(fractalGen)
 include_directories(.)
-
-link_directories(${PROJECT_SOURCE_DIR}/lib)
 
 set(sources
     "src/main.cpp"
@@ -41,5 +41,13 @@ source_group(Headers FILES ${headers})
 source_group(Sources FILES ${sources})
 
 add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers})
+if(CMAKE_VERSION VERSION_LESS "3.23.0")
+    set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES CUDA_ARCHITECTURES OFF)
+elseif(CMAKE_VERSION VERSION_LESS "3.24.0")
+    set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES CUDA_ARCHITECTURES all-major)
+else()
+    set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES CUDA_ARCHITECTURES native)
+endif()
+
 target_link_libraries(${CMAKE_PROJECT_NAME} fractalGen)
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME})

@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <random>
 #include "QUATERNION.h"
+#include <assert.h>
 
 using namespace std;
 

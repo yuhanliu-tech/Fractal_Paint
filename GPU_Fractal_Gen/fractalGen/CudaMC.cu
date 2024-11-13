@@ -22,6 +22,3 @@ void checkCUDAErrorFn(const char* msg, const char* file, int line) {
     exit(EXIT_FAILURE);
 }
 
-void CudaMC::placeholder(int N) {
-    int help = N;
-}
