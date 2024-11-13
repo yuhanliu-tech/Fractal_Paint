@@ -1,6 +1,10 @@
 #pragma once
 
 // CUDA includes
+
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 #include <stdio.h>
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
@@ -13,12 +17,9 @@
 #include <mutex>
 
 // Marching Cube includes
-#include <mutex>
-#include <vector>
-#include <cmath>
-#include "SETTINGS.h"
+//#include "SETTINGS.h"
 #include "mesh.h"
-#include "field.h"
+//#include "field.h"
 
 void checkCUDAErrorFn(const char* msg, const char* file = NULL, int line = -1);
 
