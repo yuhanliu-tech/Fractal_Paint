@@ -130,31 +130,6 @@ vector<QUATERNION> POLYNOMIAL_4D::choose(const vector<QUATERNION> m, const int n
   return final;
 }
 
-/*
-///////////////////////////////////////////////////////////////////////
-// m choose n
-///////////////////////////////////////////////////////////////////////
-vector<VEC3F> POLYNOMIAL_4D::choose(const vector<VEC3F> m, const int n)
-{
-  if (n == 1)
-    return m;
-
-  vector<VEC3F> final;
-  for (unsigned int x = 0; x < m.size(); x++)
-  {
-    vector<VEC3F> subset;
-    for (unsigned int y = x + 1; y < m.size(); y++)
-      subset.push_back(m[y]);
-
-    vector<VEC3F> chooseOneLess = choose(subset, n - 1);
-
-    for (unsigned int y = 0; y < chooseOneLess.size(); y++)
-      final.push_back(complexMultiply(chooseOneLess[y], m[x]));
-  }
-  return final;
-}
-*/
-
 //////////////////////////////////////////////////////////////////////
 // resize the polynomial to a given number of roots
 //////////////////////////////////////////////////////////////////////
@@ -252,25 +227,9 @@ QUATERNION POLYNOMIAL_4D::evaluate(const QUATERNION& point) const
 {
   assert(_totalRoots > 0);
 
-  /*
-  // compute all the needed powers
-  QUATERNION powers[_totalRoots];
-  powers[0] = point;
-  for (int x = 1; x < _totalRoots; x++)
-    //powers[x] = complexMultiply(powers[x - 1], point);
-    powers[x] = powers[x - 1] * point;
-
-  // compute the polynomial
-  QUATERNION final = _coeffs[0];
-  for (int x = 1; x < _totalRoots + 1; x++)
-    //final += complexMultiply(_coeffs[x], powers[x - 1]);
-    final += _coeffs[x] * powers[x - 1];
-    */
-
   int roots = totalRoots();
   QUATERNION final(_coeffs[roots]);
   for (int x = roots - 1; x >= 0; x--)
-    //g = g * point + topCoeffs[x];
     final.multiplyAdd(point, _coeffs[x]);
 
   return final;
@@ -282,19 +241,6 @@ QUATERNION POLYNOMIAL_4D::evaluate(const QUATERNION& point) const
 QUATERNION POLYNOMIAL_4D::evaluateDerivative(const QUATERNION& point) const
 {
   assert(_totalRoots > 0);
-
-  /*
-  // compute all the needed powers
-  QUATERNION powers[_totalRoots];
-  powers[0] = point;
-  for (int x = 1; x < _totalRoots; x++)
-    powers[x] = powers[x - 1] * point;
-
-  // compute the derivative
-  QUATERNION final = _derivs[0];
-  for (int x = 1; x < _totalRoots; x++)
-    final += _derivs[x] * powers[x-1];
-    */
 
   int roots = totalRoots();
   QUATERNION final(_derivs[roots - 1]);
@@ -447,70 +393,12 @@ void POLYNOMIAL_4D::evaluateRational(const POLYNOMIAL_4D& top, const POLYNOMIAL_
 //////////////////////////////////////////////////////////////////////
 void POLYNOMIAL_4D::evaluateRational(const POLYNOMIAL_4D& top, const POLYNOMIAL_4D& bottom, const QUATERNION& point, QUATERNION& p, QUATERNION& pPrime)
 {
-  //const int topRoots = top.totalRoots();
-  //const int bottomRoots = bottom.totalRoots();
-  //const int maxRoots = (topRoots > bottomRoots) ? topRoots : bottomRoots;
-
-  /*
-  // compute all the needed powers
-  QUATERNION powers[maxRoots];
-  powers[0] = point;
-  for (int x = 1; x < maxRoots; x++)
-    powers[x] = powers[x - 1] * point;
-    */
-
-  // compute the g polynomial
-  //const vector<QUATERNION>& topCoeffs = top.coeffs();
-  //const vector<QUATERNION>& topDerivs = top.derivs();
-  //const vector<QUATERNION>& topSecond = top.secondDerivs();
-
-  /*
-  //QUATERNION g(topCoeffs[0]);
-  //for (int x = 1; x < topRoots + 1; x++)
-  //  g += topCoeffs[x] * powers[x - 1];
-  QUATERNION g(topCoeffs[topRoots]);
-  for (int x = topRoots - 1; x >= 0; x--)
-    //g = g * point + topCoeffs[x];
-    g.multiplyAdd(point, topCoeffs[x]);
-  */
+ 
   QUATERNION g = top.evaluate(point);
-
-  /*
-  //QUATERNION gPrime(topDerivs[0]);
-  //for (int x = 1; x < topRoots; x++)
-  //  gPrime += topDerivs[x] * powers[x-1];
-  QUATERNION gPrime(topDerivs[topRoots - 1]);
-  for (int x = topRoots - 2; x >= 0; x--)
-    //gPrime = gPrime * point + topDerivs[x];
-    gPrime.multiplyAdd(point, topDerivs[x]);
-  */
   QUATERNION gPrime = top.evaluateDerivative(point);
 
-  // compute the h polynomial
-  //const vector<QUATERNION>& bottomCoeffs = bottom.coeffs();
-  //const vector<QUATERNION>& bottomDerivs = bottom.derivs();
-  //const vector<QUATERNION>& bottomSecond = bottom.secondDerivs();
-
-  /*
-  //QUATERNION h(bottomCoeffs[0]);
-  //for (int x = 1; x < bottomRoots + 1; x++)
-  //  h += bottomCoeffs[x] * powers[x - 1];
-  QUATERNION h(bottomCoeffs[bottomRoots]);
-  for (int x = bottomRoots - 1; x >=0; x--)
-    //h = h * point + bottomCoeffs[x];
-    h.multiplyAdd(point, bottomCoeffs[x]);
-  */
   QUATERNION h = bottom.evaluate(point);
 
-  /*
-  //QUATERNION hPrime(bottomDerivs[0]);
-  //for (int x = 1; x < bottomRoots; x++)
-  //  hPrime += bottomDerivs[x] * powers[x-1];
-  QUATERNION hPrime(bottomDerivs[bottomRoots - 1]);
-  for (int x = bottomRoots - 2; x >= 0; x--)
-    //hPrime = hPrime * point + bottomDerivs[x];
-    hPrime.multiplyAdd(point, bottomDerivs[x]);
-  */
   QUATERNION hPrime = bottom.evaluateDerivative(point);
 
   // compute the rational derivatives
@@ -519,10 +407,7 @@ void POLYNOMIAL_4D::evaluateRational(const POLYNOMIAL_4D& top, const POLYNOMIAL_
   const QUATERNION inverseSq = inverse * inverse;
   p = g * inverse;
   pPrime = numerator * inverseSq;
-  //const QUATERNION hSq = h * h;
 
-  //p = g / h;
-  //pPrime = numerator / hSq;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -745,12 +630,6 @@ ostream& operator<<(ostream &out, const POLYNOMIAL_4D& poly)
 {
   for (unsigned int x = 0; x < poly.roots().size(); x++)
     out << " Root " << x << ": " << poly.roots()[x] << endl;
-    /*
-  for (unsigned int x = 0; x < poly.coeffs().size(); x++)
-    out << " Coeff " << x << ": " << poly.coeffs()[x] << endl;
-  for (unsigned int x = 0; x < poly.derivs().size(); x++)
-    out << " Deriv " << x << ": " << poly.derivs()[x] << endl;
-    */
 
   return out;
 }
@@ -795,30 +674,6 @@ void POLYNOMIAL_4D::computeNestedCoeffs()
   // the first w is the same as the root
   _ws.push_back(_roots[0]);
 
-  /*
-  for (unsigned int x = 1; x < _roots.size(); x++)
-  {
-    // evaluate the polynomial up until now (P_{k-1})
-    QUATERNION Pkm1 = (_roots[x] - _ws[0]);
-    assert(_ws.size() == x);
-    for (unsigned int y = 1; y < _ws.size(); y++)
-    {
-      QUATERNION linear = (_roots[x] - _ws[y]);
-      Pkm1 = linear * Pkm1;
-    }
-
-    QUATERNION w = Pkm1 * _roots[x] * Pkm1.inverse();
-    _ws.push_back(w);
-    cout << " inverse product: " << Pkm1 * Pkm1.inverse() << endl;
-  }
-
-  cout << " Computed ws: " << endl;
-  for (unsigned int x = 0; x < _ws.size(); x++)
-    cout << _ws[x] << endl;
-    */
-
-  //QUATERNION w = (_roots[1] * (_roots[1] - _roots[0])) * (_roots[1] - _roots[0]).inverse();
-  //QUATERNION w = _roots[1] * ((_roots[1] - _roots[0]) * (_roots[1] - _roots[0]).inverse());
   QUATERNION w = _roots[1];
   _ws.push_back(w);
   w = _roots[2];
@@ -834,15 +689,11 @@ QUATERNION POLYNOMIAL_4D::evaluateFactoredPositive(const QUATERNION& point) cons
 
   for (int x = 1; x < _totalRoots; x++)
   {
-    //cout  << " temporary: " << result << endl;
-    //result = (point - _roots[x]) * result;
     result = result * (point + _roots[x]);
   }
 
   return result;
 
-  //assert(_totalRoots == 2);
-  //return (point - _ws[1]) * (point - _ws[0]);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -866,8 +717,6 @@ QUATERNION POLYNOMIAL_4D::evaluateFactoredDouble(const QUATERNION& point) const
 
   return result;
 
-  //assert(_totalRoots == 2);
-  //return (point - _ws[1]) * (point - _ws[0]);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -904,28 +753,7 @@ QUATERNION POLYNOMIAL_4D::evaluatePowerFactored(const QUATERNION& point) const
   }
 
   return result;
-  /*
-  assert(_roots.size() == _rootPowers.size());
-  QUATERNION result = point - _roots[0];
-
-  int power = _rootPowers[0];
-  QUATERNION original = result;
-  for (int x = 1; x < power; x++)
-    result = result * original;
-
-  for (int x = 1; x < _totalRoots; x++)
-  {
-    QUATERNION term = (point - _roots[x]);
-    original = term;
-
-    for (int y = 1; y < (int)_rootPowers[x]; y++)
-      term = term * original;
-
-    result = result * term;
-  }
-
-  return result;
-  */
+  
 }
 
 //////////////////////////////////////////////////////////////////////
