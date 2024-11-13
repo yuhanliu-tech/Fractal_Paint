@@ -7,6 +7,9 @@ cis565_getting_started_generated_kernel*
 *.xcodeproj
 build
 
+# SDFs
+*.f3d
+
 # Created by https://www.gitignore.io/api/linux,osx,sublimetext,windows,jetbrains,vim,emacs,cmake,c++,cuda,visualstudio,webstorm,eclipse,xcode
 
 ### Linux ###
