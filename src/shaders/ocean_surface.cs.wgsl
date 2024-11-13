@@ -64,7 +64,6 @@ fn conj(a: vec2<f32>) -> vec2<f32> {
 const u_wind = vec2<f32>(1, 0);
 const u_amplitude = f32(20.0);
 const u_g = f32(9.81);
-const PI = 3.14159265358979323846264; // Life of π
 const l = 100.0;
 
 fn philips(wave_vector: vec2<f32>) -> f32 {
