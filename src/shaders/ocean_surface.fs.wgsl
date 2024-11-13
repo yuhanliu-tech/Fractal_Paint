@@ -5,13 +5,14 @@
 struct FragmentInput
 {
     @location(0) pos: vec3f,
+    @location(1) texCoord: vec2f,
 }
 
 @fragment
 fn main(in: FragmentInput) -> @location(0) vec4f
 {
     // TODO: uvs that aren't cursed
-    let uv = vec2f(in.pos.x + cameraUniforms.cameraPos.x, in.pos.z + cameraUniforms.cameraPos.z) / 512 + 0.5;
+    let uv = vec2f(in.texCoord) / 512;
     let normal = textureSample(normalMap, texSampler, uv);
     return vec4f(normal.xyz, 1);
 }

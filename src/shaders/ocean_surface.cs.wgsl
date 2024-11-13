@@ -114,7 +114,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let h = f32(noise2 * vp);
     let h_est = conj(vec2<f32>(noise2 * vn));
 
-    textureStore(displacementMap, globalIdx.xy, vec4(sin(x), 0, 0, 0));
-    textureStore(normalMap, globalIdx.xy, vec4f(noise2 * vp, 0, 0, 1));
+    textureStore(displacementMap, globalIdx.xy, vec4((sin(uv.x * 0.25) + 1) / 2, 0, 0, 0));
+    textureStore(normalMap, globalIdx.xy, vec4f(noise2 * vp, 0, 1, 1));
 }
 

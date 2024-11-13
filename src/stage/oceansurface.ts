@@ -3,12 +3,10 @@ import * as shaders from '../shaders/shaders';
 import * as renderer from '../renderer';
 import { OceanSurfaceChunk } from "./oceansurfacechunk";
 
-const chunk_size = 256;
-const quad_res = [chunk_size, chunk_size];
-const quad_dims = [chunk_size, chunk_size];
+const quad_res = [512, 512];
 
 export const vertexBufferLayout: GPUVertexBufferLayout = {
-    arrayStride: 32,
+    arrayStride: 8,
     attributes: [
         { // pos
             format: "float32x2",
@@ -40,7 +38,7 @@ export class OceanSurface {
                 {   // world position
                     binding: 0,
                     visibility: GPUShaderStage.COMPUTE,
-                    buffer: {type: "uniform"}
+                    buffer: { type: "uniform" }
                 },
                 {   // displacement
                     binding: 1,
@@ -110,24 +108,24 @@ export class OceanSurface {
         // Initializing the buffers that actually hold the quad
         const verts = [];
         for (let x = 0; x < quad_res[0]; x++) {
-            for (let y = 0; y < quad_res[0]; y++) {
-                verts.push((x / quad_res[0] - 0.5) * quad_dims[0]);
-                verts.push((y / quad_res[1] - 0.5) * quad_dims[1]);
+            for (let y = 0; y < quad_res[1]; y++) {
+                verts.push(x);
+                verts.push(y);
             }
         }
 
         this.vertexBuffer = renderer.device.createBuffer({
-            size: verts.length * 4,
+            size: verts.length * 4, // 4 bytes per float32
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
             mappedAtCreation: true
-        })
+        });
 
-        new Float32Array(this.vertexBuffer.getMappedRange()).set(verts)
+        new Float32Array(this.vertexBuffer.getMappedRange()).set(verts);
         this.vertexBuffer.unmap();
 
         const inds = [];
-        for (let x = 0; x < quad_res[0]; x++) {
-            for (let y = 0; y < quad_res[1]; y++) {
+        for (let x = 0; x < quad_res[0] - 1; x++) {
+            for (let y = 0; y < quad_res[1] - 1; y++) {
                 const a = x + y * quad_res[0];
                 const b = (x + 1) + y * quad_res[0];
                 const c = x + (y + 1) * quad_res[0];
@@ -135,6 +133,7 @@ export class OceanSurface {
                 inds.push(a, b, c, b, c, d);
             }
         }
+
         this.numIndices = inds.length;
 
         this.indexBuffer = renderer.device.createBuffer({
@@ -145,6 +144,7 @@ export class OceanSurface {
 
         new Uint32Array(this.indexBuffer.getMappedRange()).set(inds);
         this.indexBuffer.unmap();
+
     }
 
     // TODO: compute multiple chunks
