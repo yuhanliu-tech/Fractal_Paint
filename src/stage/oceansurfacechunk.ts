@@ -2,7 +2,7 @@ import { vec2, vec3 } from "wgpu-matrix"
 import * as shaders from '../shaders/shaders';
 import * as renderer from '../renderer';
 
-const ocean_surface_texture_dims = [512, 512];
+const ocean_surface_texture_dims = [1024, 1024];
 
 export class OceanSurfaceChunk {
     // Textures
@@ -10,14 +10,14 @@ export class OceanSurfaceChunk {
     normalTexture: GPUTexture;
 
     positionBuffer: GPUBuffer;
-   
+
     computeBindGroup: GPUBindGroup;
     renderBindGroup: GPUBindGroup;
 
     constructor(
-        computeBindGroupLayout : GPUBindGroupLayout,
+        computeBindGroupLayout: GPUBindGroupLayout,
         renderBindGroupLayout: GPUBindGroupLayout,
-        sampler : GPUSampler
+        sampler: GPUSampler
     ) {
 
         // Buffer to hold the positions
@@ -43,7 +43,7 @@ export class OceanSurfaceChunk {
         this.computeBindGroup = renderer.device.createBindGroup({
             layout: computeBindGroupLayout,
             entries: [
-                { binding: 0, resource: {buffer: this.positionBuffer}},
+                { binding: 0, resource: { buffer: this.positionBuffer } },
                 { binding: 1, resource: this.displacementTexture.createView() },
                 { binding: 2, resource: this.normalTexture.createView() }
             ]

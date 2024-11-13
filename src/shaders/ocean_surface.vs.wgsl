@@ -22,10 +22,10 @@ fn main(in: VertexInput) -> VertexOutput
     out.texCoord = in.pos;
 
     let modelPos = vec4f(
-        in.pos.x - 256 + cameraUniforms.cameraPos.x,
+        in.pos.x - 512 + cameraUniforms.cameraPos.x,
         // 0,
         f32(displacement) * 10,
-        in.pos.y - 256 + cameraUniforms.cameraPos.z,
+        in.pos.y - 512 + cameraUniforms.cameraPos.z,
         1
     );
 

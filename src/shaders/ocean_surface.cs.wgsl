@@ -61,17 +61,22 @@ fn conj(a: vec2<f32>) -> vec2<f32> {
     return vec2<f32>(a.x, -a.y);
 }
 
-const u_wind = vec2<f32>(5, 0);
+const u_wind = vec2<f32>(1, 0);
 const u_amplitude = f32(20.0);
 const u_g = f32(9.81);
 const PI = 3.14159265358979323846264; // Life of π
-const l = 10.0;
+const l = 100.0;
 
 fn philips(wave_vector: vec2<f32>) -> f32 {
-    let V = length(u_wind);
-    let Lp = V*V/u_g;
-    var k = length(wave_vector);
-    k = max(k, 0.1);
+    let k = sqrt(wave_vector.x * wave_vector.x + wave_vector.y * wave_vector.y);
+    if (k == 0.0) {
+        return 0.0;
+    }
+    
+    // let V = length(u_wind);
+    // let Lp = V*V/u_g;
+    // var k = length(wave_vector);
+    // k = max(k, 0.1);
     // return clamp(sqrt(
     //         u_amplitude
     //         *pow(dot(normalize(wave_vector), normalize(u_wind)), 2.0)
@@ -79,11 +84,16 @@ fn philips(wave_vector: vec2<f32>) -> f32 {
     //         // *exp(-1.f*pow(k*l,2.0))
     //     )/(k*k), -4000, 4000);
 
-    let p1 = u_amplitude / (k * k * k * k);
-    let p2 = dot(normalize(wave_vector), normalize(u_wind));
-    let p3 = exp(-1.0 / (k * Lp) * (k * Lp));
-    let p4 = exp(-1.0 * k * k * l * l);
-    return sqrt(p1 * p2 * p2 * p3);
+    let L2 = l * l;
+    let k_dot_w = (wave_vector.x * u_wind.x + wave_vector.y * u_wind.y) / k;
+    let P = u_amplitude * exp(-1.0 / (k * k * L2)) / (k * k * k * k) * pow(k_dot_w, 2);
+    return P;
+
+    // let p1 = u_amplitude / (k * k * k * k);
+    // let p2 = dot(normalize(wave_vector), normalize(u_wind));
+    // let p3 = exp(-1.0 / (k * Lp) * (k * Lp));
+    // let p4 = exp(-1.0 * k * k * l * l);
+    // return sqrt(p1 * p2 * p2 * p3);
     // return clamp(sqrt(
     //         u_amplitude
     //         *pow(, 2.0)
@@ -95,7 +105,7 @@ fn philips(wave_vector: vec2<f32>) -> f32 {
 @compute
 @workgroup_size(16, 16)
 fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
-    if (globalIdx.x >= 512 || globalIdx.y >= 512) {
+    if (globalIdx.x >= 1024 || globalIdx.y >= 1024) {
         return;
     }
 
@@ -103,18 +113,19 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let y = f32(globalIdx.y);
 
     let uv = vec2<f32>(x, y) + world_position;
-    let noise = perlinNoise(uv / 2.0f);
+    let noise = perlinNoise(uv / 50.0f);
     let noise2 = blugausnoise(vec2<f32>(x, y) + world_position);
     
-    let wave_vector = vec2<f32>(2.0 * PI * fract(uv.x / 512.0), 2.0 * PI * fract(uv.y / 512.0));
+    let wave_vector = vec2<f32>(2.0 * PI * fract(uv.x / 1024.0), 2.0 * PI * fract(uv.y / 1024.0));
 
     let vp = philips(wave_vector);
     let vn = philips(-wave_vector);
-    
-    let h = f32(noise2 * vp);
-    let h_est = conj(vec2<f32>(noise2 * vn));
 
-    textureStore(displacementMap, globalIdx.xy, vec4((sin(uv.x * 0.25) + 1) / 2, 0, 0, 0));
-    textureStore(normalMap, globalIdx.xy, vec4f(noise2 * vp, 0, 1, 1));
+    let h = noise2 * sqrt(vp / 2.0);
+    //let h = f32(noise2 * vp);
+    //let h_est = conj(vec2<f32>(noise2 * vn));
+
+    textureStore(displacementMap, globalIdx.xy, vec4(2 * noise, 0, 0, 0));
+    textureStore(normalMap, globalIdx.xy, vec4f(2 * noise, 0, 1, 1));
 }
 

@@ -12,7 +12,22 @@ struct FragmentInput
 fn main(in: FragmentInput) -> @location(0) vec4f
 {
     // TODO: uvs that aren't cursed
-    let uv = vec2f(in.texCoord) / 512;
+    let uv = vec2f(in.texCoord) / 1024;
     let normal = textureSample(normalMap, texSampler, uv);
-    return vec4f(normal.xyz, 1);
+    // let nor = vec3<f32>(normal.x, normal.y, normal.z);
+
+    // let viewDir = normalize(vec3<f32>(cameraUniforms.cameraPos.x, cameraUniforms.cameraPos.y, cameraUniforms.cameraPos.z) - in.pos);
+    // let lightDir = normalize(vec3<f32>(0,10,0) - in.pos);
+
+    // // Calculate diffuse lighting
+    // let diffuse = max(dot(nor, lightDir), 0.0);
+
+    // // Calculate specular lighting
+    // let halfDir = normalize(viewDir + lightDir);
+    // let specular = pow(max(dot(nor, halfDir), 0.0), 32);
+
+    // let color = vec3<f32>(1, 0, 0) * diffuse * 10 + specularColor * specular * 10;
+    // return vec4(color, 0.8);
+    let color =  vec3<f32>(normal.x, normal.x, normal.z);
+    return vec4f(color, 1);
 }
