@@ -64,7 +64,7 @@ export class OceanSurface {
             entries: [
                 { // displacement
                     binding: 0,
-                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, // FIXME: remove fragment here
+                    visibility: GPUShaderStage.VERTEX,
                     texture: { sampleType: "unfilterable-float" }
                 },
                 { // normals
