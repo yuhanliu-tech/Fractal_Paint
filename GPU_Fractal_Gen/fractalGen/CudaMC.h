@@ -53,7 +53,16 @@ namespace CudaMC {
 
     void setDefaultArraySizes(uint vertSize, uint normSize, uint triSize);
     
+    inline uint mc_internalToIndex1D(uint i, uint j, uint k, const VEC3I& size)
+    {
+        return (k * size.y() + j) * size.x() + i;
+    }
 
+    inline uint mc_internalToIndex1DSlab(uint i, uint j, uint k, const VEC3I& size)
+    {
+        return size.x() * size.y() * (k % 2) + j * size.x() + i;
+    }
 
+    // ------------------------------------------
 
 }
