@@ -1,8 +1,6 @@
 @group(1) @binding(0) var displacementMap: texture_2d<f32>;
 @group(${bindGroup_scene}) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
 
-// @group(${bindGroup_model}) @binding(0) var<uniform> modelMat: mat4x4f;
-
 struct VertexInput
 {
     @location(0) pos: vec2f,
@@ -24,10 +22,10 @@ fn main(in: VertexInput) -> VertexOutput
     out.texCoord = in.pos;
 
     let modelPos = vec4f(
-        in.pos.x - 256 + cameraUniforms.cameraPos.x,
+        in.pos.x - 16 + cameraUniforms.cameraPos.x,
         // 0,
         f32(displacement) * 10,
-        in.pos.y - 256 + cameraUniforms.cameraPos.z,
+        in.pos.y - 16 + cameraUniforms.cameraPos.z,
         1
     );
 

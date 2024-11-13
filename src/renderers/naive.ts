@@ -132,37 +132,37 @@ export class NaiveRenderer extends renderer.Renderer {
         this.oceanSurface.computeTextures(encoder, this.chunk);
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
         
-        const renderPass = encoder.beginRenderPass({
-            label: "naive render pass",
-            colorAttachments: [
-                {
-                    view: canvasTextureView,
-                    clearValue: [0, 0, 0, 0],
-                    loadOp: "clear",
-                    storeOp: "store"
-                }
-            ],
-            depthStencilAttachment: {
-                view: this.depthTextureView,
-                depthClearValue: 1.0,
-                depthLoadOp: "clear",
-                depthStoreOp: "store"
-            }
-        });
-        renderPass.setPipeline(this.pipeline);
+        // const renderPass = encoder.beginRenderPass({
+        //     label: "naive render pass",
+        //     colorAttachments: [
+        //         {
+        //             view: canvasTextureView,
+        //             clearValue: [0, 0, 0, 0],
+        //             loadOp: "clear",
+        //             storeOp: "store"
+        //         }
+        //     ],
+        //     depthStencilAttachment: {
+        //         view: this.depthTextureView,
+        //         depthClearValue: 1.0,
+        //         depthLoadOp: "clear",
+        //         depthStoreOp: "store"
+        //     }
+        // });
+        // renderPass.setPipeline(this.pipeline);
 
-        renderPass.setBindGroup(shaders.constants.bindGroup_scene, this.sceneUniformsBindGroup);
-        this.scene.iterate(node => {
-            renderPass.setBindGroup(shaders.constants.bindGroup_model, node.modelBindGroup);
-        }, material => {
-            renderPass.setBindGroup(shaders.constants.bindGroup_material, material.materialBindGroup);
-        }, primitive => {
-            renderPass.setVertexBuffer(0, primitive.vertexBuffer);
-            renderPass.setIndexBuffer(primitive.indexBuffer, 'uint32');
-            renderPass.drawIndexed(primitive.numIndices);
-        });
+        // renderPass.setBindGroup(shaders.constants.bindGroup_scene, this.sceneUniformsBindGroup);
+        // this.scene.iterate(node => {
+        //     renderPass.setBindGroup(shaders.constants.bindGroup_model, node.modelBindGroup);
+        // }, material => {
+        //     renderPass.setBindGroup(shaders.constants.bindGroup_material, material.materialBindGroup);
+        // }, primitive => {
+        //     renderPass.setVertexBuffer(0, primitive.vertexBuffer);
+        //     renderPass.setIndexBuffer(primitive.indexBuffer, 'uint32');
+        //     renderPass.drawIndexed(primitive.numIndices);
+        // });
 
-        renderPass.end();
+        // renderPass.end();
 
         const oceanSurfaceRenderPass = encoder.beginRenderPass({
             label: "ocean surface render pass",
@@ -170,14 +170,14 @@ export class NaiveRenderer extends renderer.Renderer {
                 {
                     view: canvasTextureView,
                     clearValue: [0, 0, 0, 0],
-                    loadOp: "load",    // TODO: change loadOp when rendering on top of other stuff
+                    loadOp: "clear",    // TODO: change loadOp when rendering on top of other stuff
                     storeOp: "store"
                 },
             ],
             depthStencilAttachment: {
                 view: this.depthTextureView,
                 depthClearValue: 1.0,
-                depthLoadOp: "load",
+                depthLoadOp: "clear",
                 depthStoreOp: "store"
             }
         });
