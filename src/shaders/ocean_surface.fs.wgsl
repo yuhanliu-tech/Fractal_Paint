@@ -12,9 +12,9 @@ struct FragmentInput
 fn main(in: FragmentInput) -> @location(0) vec4f
 {
     // TODO: uvs that aren't cursed
-    let uv = vec2f(in.texCoord) / 16;
-    let displacement = textureLoad(displacementMap, vec2<i32>(in.texCoord), 0);
+    let uv = vec2f(in.texCoord) / 512;
+    // let displacement = textureLoad(displacementMap, vec2<i32>(in.texCoord), 0);
     let normal = textureSample(normalMap, texSampler, uv);
-    // return vec4f(normal.xyz, 1);
-    return vec4f(displacement.xy, 1, 1);
+    return vec4f(normal.xyz, 1);
+    // return vec4f(displacement.xy, 1, 1);
 }

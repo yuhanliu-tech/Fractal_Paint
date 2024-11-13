@@ -3,7 +3,7 @@ import * as shaders from '../shaders/shaders';
 import * as renderer from '../renderer';
 import { OceanSurfaceChunk } from "./oceansurfacechunk";
 
-const quad_res = [32, 32];
+const quad_res = [512, 512];
 
 export const vertexBufferLayout: GPUVertexBufferLayout = {
     arrayStride: 8,
@@ -154,7 +154,7 @@ export class OceanSurface {
         computePass.setBindGroup(0, chunk.computeBindGroup);
 
         // TODO: don't hardcode this
-        computePass.dispatchWorkgroups(2, 2, 1);
+        computePass.dispatchWorkgroups(32, 32, 1);
         computePass.end();
     }
 }

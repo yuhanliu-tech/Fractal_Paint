@@ -39,7 +39,7 @@ fn perlinNoise(uv: vec2<f32>) -> f32 {
 @compute
 @workgroup_size(16, 16)
 fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
-    if (globalIdx.x >= 32 || globalIdx.y >= 32) {
+    if (globalIdx.x >= 512 || globalIdx.y >= 512) {
         return;
     }
     let x = f32(globalIdx.x);

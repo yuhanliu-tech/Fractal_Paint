@@ -2,7 +2,7 @@ import { vec2, vec3 } from "wgpu-matrix"
 import * as shaders from '../shaders/shaders';
 import * as renderer from '../renderer';
 
-const ocean_surface_texture_dims = [32, 32];
+const ocean_surface_texture_dims = [512, 512];
 
 export class OceanSurfaceChunk {
     // Textures
