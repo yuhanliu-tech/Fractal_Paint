@@ -59,17 +59,17 @@ export class OceanSurface {
         this.renderBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "ocean surface render layout",
             entries: [
-                {
+                { // displacement
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX,
                     texture: { sampleType: "unfilterable-float" }
                 },
-                {
+                { // normals
                     binding: 1,
                     visibility: GPUShaderStage.FRAGMENT,
                     texture: { sampleType: "float" }
                 },
-                {
+                { // sampler
                     binding: 2,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     sampler: {}
