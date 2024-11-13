@@ -8,20 +8,24 @@ export class OceanSurfaceChunk {
     // Textures
     displacementTexture: GPUTexture;
     normalTexture: GPUTexture;
-    
-    worldPosition: Float32Array;
 
+    positionBuffer: GPUBuffer;
+   
     computeBindGroup: GPUBindGroup;
     renderBindGroup: GPUBindGroup;
 
     constructor(
-        worldPosition: Float32Array,
         computeBindGroupLayout : GPUBindGroupLayout,
         renderBindGroupLayout: GPUBindGroupLayout,
         sampler : GPUSampler
     ) {
-        
-        this.worldPosition = worldPosition;
+
+        // Buffer to hold the positions
+        this.positionBuffer = renderer.device.createBuffer({
+            label: "chunk position",
+            size: 2 * 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
 
         // Setting up textures and making a bind group for them
         this.displacementTexture = renderer.device.createTexture({
@@ -39,8 +43,9 @@ export class OceanSurfaceChunk {
         this.computeBindGroup = renderer.device.createBindGroup({
             layout: computeBindGroupLayout,
             entries: [
-                { binding: 0, resource: this.displacementTexture.createView() },
-                { binding: 1, resource: this.normalTexture.createView() }
+                { binding: 0, resource: {buffer: this.positionBuffer}},
+                { binding: 1, resource: this.displacementTexture.createView() },
+                { binding: 2, resource: this.normalTexture.createView() }
             ]
         });
 
@@ -52,5 +57,9 @@ export class OceanSurfaceChunk {
                 { binding: 2, resource: sampler },
             ]
         });
+    }
+
+    public updatePosition(x: number, y: number) {
+        renderer.device.queue.writeBuffer(this.positionBuffer, 0, new Float32Array([x, y]))
     }
 }

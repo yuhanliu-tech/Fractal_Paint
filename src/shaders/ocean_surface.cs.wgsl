@@ -1,5 +1,6 @@
-@group(0) @binding(0) var displacementMap: texture_storage_2d<r32float, write>;
-@group(0) @binding(1) var normalMap: texture_storage_2d<rgba8unorm, write>;
+@group(0) @binding(0) var<uniform> world_position: vec2f;
+@group(0) @binding(1) var displacementMap: texture_storage_2d<r32float, write>;
+@group(0) @binding(2) var normalMap: texture_storage_2d<rgba8unorm, write>;
 
 fn random2(p: vec2<f32>) -> vec2<f32> {
     return fract(sin(vec2(dot(p, vec2(127.1f, 311.7f)),
@@ -44,7 +45,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let x = f32(globalIdx.x);
     let y = f32(globalIdx.y);
 
-    let uv = vec2<f32>(x, y);
+    let uv = vec2<f32>(x, y) + world_position;
     let noise = perlinNoise(uv / 2.0f);
     
     textureStore(displacementMap, globalIdx.xy, vec4(sin(x), 0, 0, 0));

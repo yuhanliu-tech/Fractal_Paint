@@ -37,8 +37,13 @@ export class OceanSurface {
         this.computeBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "ocean surface compute layout",
             entries: [
-                {   // displacement
+                {   // world position
                     binding: 0,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {type: "uniform"}
+                },
+                {   // displacement
+                    binding: 1,
                     visibility: GPUShaderStage.COMPUTE,
                     storageTexture: {
                         access: "write-only",
@@ -46,7 +51,7 @@ export class OceanSurface {
                     }
                 },
                 {   // normal
-                    binding: 1,
+                    binding: 2,
                     visibility: GPUShaderStage.COMPUTE,
                     storageTexture: {
                         access: "write-only",

@@ -23,7 +23,6 @@ export class NaiveRenderer extends renderer.Renderer {
         super(stage);
         this.oceanSurface = new OceanSurface();
         this.chunk = new OceanSurfaceChunk(
-            new Float32Array([0, 0]),
             this.oceanSurface.computeBindGroupLayout,
             this.oceanSurface.renderBindGroupLayout,
             this.oceanSurface.sampler
@@ -127,6 +126,8 @@ export class NaiveRenderer extends renderer.Renderer {
     }
 
     override draw() {
+        this.chunk.updatePosition(this.camera.cameraPos[0], this.camera.cameraPos[2]);
+
         const encoder = renderer.device.createCommandEncoder();
         this.oceanSurface.computeTextures(encoder, this.chunk);
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
