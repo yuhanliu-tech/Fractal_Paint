@@ -17,7 +17,8 @@ struct VertexOutput
 @vertex
 fn main(in: VertexInput) -> VertexOutput
 {
-    let modelPos = vec4(in.pos.x, 0, in.pos.y, 1);
+    let pos = cameraUniforms.cameraPos;
+    let modelPos = vec4(in.pos.x + cameraUniforms.cameraPos.x, 0, in.pos.y + cameraUniforms.cameraPos.z, 1);
 
     var out: VertexOutput;
     out.fragPos = cameraUniforms.viewProj * modelPos;

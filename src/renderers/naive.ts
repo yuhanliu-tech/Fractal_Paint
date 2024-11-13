@@ -33,7 +33,7 @@ export class NaiveRenderer extends renderer.Renderer {
             entries: [
                 {
                     binding: 0,
-                    visibility: GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 },
             ]
@@ -133,7 +133,7 @@ export class NaiveRenderer extends renderer.Renderer {
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
         // renderPass.setPipeline()
-        
+
         // const renderPass = encoder.beginRenderPass({
         //     label: "naive render pass",
         //     colorAttachments: [
@@ -187,11 +187,11 @@ export class NaiveRenderer extends renderer.Renderer {
         oceanSurfaceRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
         // TODO: Bind group for chunk position
         oceanSurfaceRenderPass.setBindGroup(1, this.chunk.renderBindGroup);
-        
+
         oceanSurfaceRenderPass.setVertexBuffer(0, this.oceanSurface.vertexBuffer);
         oceanSurfaceRenderPass.setIndexBuffer(this.oceanSurface.indexBuffer, 'uint32');
         oceanSurfaceRenderPass.drawIndexed(this.oceanSurface.numIndices);
-        oceanSurfaceRenderPass.end();  
+        oceanSurfaceRenderPass.end();
         renderer.device.queue.submit([encoder.finish()]);
     }
 }

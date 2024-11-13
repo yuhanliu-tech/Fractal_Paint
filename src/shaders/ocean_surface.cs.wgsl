@@ -36,19 +36,85 @@ fn perlinNoise(uv: vec2<f32>) -> f32 {
     return surfletSum;
 }
 
+fn blugausnoise(c1: vec2<f32>) -> f32 {
+    //c1 += 0.07* fract(iTime);
+    
+    //vec2 c0 = vec2(c1.x- 1.,c1.y);
+    //vec2 c2 = vec2(c1.x+ 1.,c1.y);
+    let cx = vec3<f32>(c1.x + vec3<f32>(-1,0,1));
+    let f0 = fract(vec4<f32>(cx * 9.1031, c1.y * 8.1030));
+    let f1 = fract(vec4<f32>(cx * 7.0973, c1.y * 6.0970));
+	let t0 = vec4<f32>(f0.xw, f1.xw);//fract(c0.xyxy* vec4(.1031,.1030,.0973,.0970));
+	let t1 = vec4<f32>(f0.yw, f1.yw);//fract(c1.xyxy* vec4(.1031,.1030,.0973,.0970));
+	let t2 = vec4<f32>(f0.zw, f1.zw);//fract(c2.xyxy* vec4(.1031,.1030,.0973,.0970));
+    let p0 = vec4<f32>(t0 + dot(t0, t0.wzxy + 19.19));
+    let p1 = vec4<f32>(t1 + dot(t1, t1.wzxy + 19.19));
+    let p2 = vec4<f32>(t2 + dot(t2, t2.wzxy + 19.19));
+	let n0 = fract(vec4<f32>(p0.zywx * (p0.xxyz + p0.yzzw)));
+	let n1 = fract(vec4<f32>(p1.zywx* (p1.xxyz+ p1.yzzw)));
+	let n2 = fract(vec4<f32>(p2.zywx* (p2.xxyz+ p2.yzzw)));
+    return dot(0.5 * n1 - 0.125 * (n0 + n2), vec4<f32>(1));
+}
+
+// COMPLEX OPERATIONS
+fn conj(a: vec2<f32>) -> vec2<f32> {
+    return vec2<f32>(a.x, -a.y);
+}
+
+const u_wind = vec2<f32>(5, 0);
+const u_amplitude = f32(20.0);
+const u_g = f32(9.81);
+const PI = 3.14159265358979323846264; // Life of π
+const l = 10.0;
+
+fn philips(wave_vector: vec2<f32>) -> f32 {
+    let V = length(u_wind);
+    let Lp = V*V/u_g;
+    var k = length(wave_vector);
+    k = max(k, 0.1);
+    // return clamp(sqrt(
+    //         u_amplitude
+    //         *pow(dot(normalize(wave_vector), normalize(u_wind)), 2.0)
+    //         *exp(-1.f/(pow(k*Lp,2.0)))
+    //         // *exp(-1.f*pow(k*l,2.0))
+    //     )/(k*k), -4000, 4000);
+
+    let p1 = u_amplitude / (k * k * k * k);
+    let p2 = dot(normalize(wave_vector), normalize(u_wind));
+    let p3 = exp(-1.0 / (k * Lp) * (k * Lp));
+    let p4 = exp(-1.0 * k * k * l * l);
+    return sqrt(p1 * p2 * p2 * p3);
+    // return clamp(sqrt(
+    //         u_amplitude
+    //         *pow(, 2.0)
+    //         *exp(-1.f/(pow(k*Lp,2.0)))
+    //         *exp(-1.f*pow(k*l,2.0))
+    //     )/(k*k), 0, 4000);  
+}
+
 @compute
 @workgroup_size(16, 16)
 fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     if (globalIdx.x >= 512 || globalIdx.y >= 512) {
         return;
     }
+
     let x = f32(globalIdx.x);
     let y = f32(globalIdx.y);
 
     let uv = vec2<f32>(x, y) + world_position;
     let noise = perlinNoise(uv / 2.0f);
+    let noise2 = blugausnoise(vec2<f32>(x, y) + world_position);
     
+    let wave_vector = vec2<f32>(2.0 * PI * fract(uv.x / 512.0), 2.0 * PI * fract(uv.y / 512.0));
+
+    let vp = philips(wave_vector);
+    let vn = philips(-wave_vector);
+    
+    let h = f32(noise2 * vp);
+    let h_est = conj(vec2<f32>(noise2 * vn));
+
     textureStore(displacementMap, globalIdx.xy, vec4(sin(x), 0, 0, 0));
-    textureStore(normalMap, globalIdx.xy, vec4f(noise, 0, 0, 1));
+    textureStore(normalMap, globalIdx.xy, vec4f(noise2 * vp, 0, 0, 1));
 }
 
