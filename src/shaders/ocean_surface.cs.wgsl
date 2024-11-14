@@ -2,6 +2,12 @@
 @group(0) @binding(1) var displacementMap: texture_storage_2d<r32float, write>;
 @group(0) @binding(2) var normalMap: texture_storage_2d<rgba8unorm, write>;
 
+const u_wind = vec2<f32>(1, 0);
+const u_amplitude = f32(20.0);
+const u_g = f32(9.81);
+const PI = 3.14159265358979323846264; // Life of π
+const l = 100.0;
+
 fn random2(p: vec2<f32>) -> vec2<f32> {
     return fract(sin(vec2(dot(p, vec2(127.1f, 311.7f)),
                  dot(p, vec2(269.5f,183.3f))))
@@ -61,12 +67,6 @@ fn conj(a: vec2<f32>) -> vec2<f32> {
     return vec2<f32>(a.x, -a.y);
 }
 
-const u_wind = vec2<f32>(1, 0);
-const u_amplitude = f32(20.0);
-const u_g = f32(9.81);
-const PI = 3.14159265358979323846264; // Life of π
-const l = 100.0;
-
 fn philips(wave_vector: vec2<f32>) -> f32 {
     let k = sqrt(wave_vector.x * wave_vector.x + wave_vector.y * wave_vector.y);
     if (k == 0.0) {
@@ -113,7 +113,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let y = f32(globalIdx.y);
 
     let uv = vec2<f32>(x, y) + world_position;
-    let noise = perlinNoise(uv / 50.0f);
+    let noise = 0.9 * perlinNoise(uv / 9.0f);
     let noise2 = blugausnoise(vec2<f32>(x, y) + world_position);
     
     let wave_vector = vec2<f32>(2.0 * PI * fract(uv.x / 1024.0), 2.0 * PI * fract(uv.y / 1024.0));
@@ -125,7 +125,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     //let h = f32(noise2 * vp);
     //let h_est = conj(vec2<f32>(noise2 * vn));
 
-    textureStore(displacementMap, globalIdx.xy, vec4(2 * noise, 0, 0, 0));
-    textureStore(normalMap, globalIdx.xy, vec4f(2 * noise, 0, 1, 1));
-}
+    textureStore(displacementMap, globalIdx.xy, vec4(noise, 0, 0, 0));
+    textureStore(normalMap, globalIdx.xy, vec4f(noise * 2, 1, 1, 1));
 
+}

@@ -53,7 +53,7 @@ export class Camera {
     cameraRight: Vec3 = vec3.create(1, 0, 0);
     yaw: number = 0;
     pitch: number = 0;
-    moveSpeed: number = 0.004;
+    moveSpeed: number = 0.04;
     sensitivity: number = 0.15;
 
     static readonly nearPlane = 0.1;
