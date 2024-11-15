@@ -126,6 +126,7 @@ export class NaiveRenderer extends renderer.Renderer {
     }
 
     override draw() {
+        
         this.chunk.updatePosition(this.camera.cameraPos[0], this.camera.cameraPos[2]);
         
         const currentTime = performance.now() * 0.001; // Convert to seconds

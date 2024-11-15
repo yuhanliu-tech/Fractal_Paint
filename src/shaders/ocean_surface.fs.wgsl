@@ -4,16 +4,18 @@
 
 struct FragmentInput
 {
+    @builtin(position) fragPos: vec4f,
     @location(0) pos: vec3f,
     @location(1) texCoord: vec2f,
+    @location(2) worldPosition: vec2f,
 }
 
 fn getSunDirection() -> vec3<f32> {
-  return normalize(vec3(-0.0773502691896258 , 0.5 + sin(0.2 + 2.6) * 0.45 , 0.5773502691896258));
+  return normalize(vec3(-0.2 , 0.6 + sin(20) * 0.15 , 1.0));
 }
 
 fn getSun(dir: vec3<f32>) -> f32 { 
-  return pow(max(0.0, dot(dir, getSunDirection())), 720.0) * 210.0;
+  return pow(max(0.0, dot(dir, getSunDirection())), 70.0) * 60.0;
 }
 
 fn aces_tonemap(color: vec3<f32>) -> vec3<f32> {  
@@ -53,7 +55,7 @@ fn createRotationMatrixAxisAngle(axis: vec3<f32>, angle: f32) -> mat3x3<f32> {
 
 fn getRay(coord: vec2<f32>) -> vec3<f32> {
   
-  let proj = normalize(vec3(coord.x, coord.y, 1.5));
+  let proj = normalize(vec3(coord.x, coord.y, 0.0));
 
   return createRotationMatrixAxisAngle(vec3(0.0, -1.0, 0.0), 3.0) 
     * createRotationMatrixAxisAngle(vec3(1.0, 0.0, 0.0), 0.5 + 1.5 * 2.0 - 1.0)
@@ -75,9 +77,9 @@ fn main(in: FragmentInput) -> @location(0) vec4f
 
     // ocean color with lighting considerations
 
-    var ray = getRay(uv);
+    var ray = getRay(in.fragPos.xy);
 
-    let fresnel = (0.04 + (1.0-0.04)*(pow(1.0 - max(0.0, dot(-normal.xyz, ray)), 5.0)));
+    let fresnel = (0.04 + (1.0)*(pow(1.0 - max(0.0, dot(-normal.xyz, ray)), 50.0)));
     
     var R = normalize(reflect(ray, normal.xyz));
     R.y = abs(R.y);

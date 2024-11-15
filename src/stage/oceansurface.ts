@@ -81,7 +81,7 @@ export class OceanSurface {
                     binding: 2,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     sampler: {}
-                },
+                }
             ]
         })
 
