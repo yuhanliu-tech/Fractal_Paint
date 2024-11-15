@@ -146,7 +146,7 @@ export abstract class Renderer {
         this.stats.end();
         this.frameStats.update(time);
 
-        this.prevTime = time;
+        this.prevTime = time; 
         this.frameRequestId = requestAnimationFrame((t) => this.onFrame(t));
     }
 }

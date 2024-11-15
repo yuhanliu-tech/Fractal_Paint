@@ -22,11 +22,11 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     let oceanColor = vec3<f32>(0, normal.x * 0.65, normal.z * 0.85);
 
     // distance from the camera to the fragment
-    let fragToCamera = in.pos - vec3(cameraUniforms.cameraPos.xyz);
-    let distance = length(fragToCamera);
+    let distance = length(in.pos - vec3(cameraUniforms.cameraPos.xyz));
 
-    let fogFactor = clamp(distance / fogDistance, 0.0, 1.0);
+    let fogFactor = clamp(pow(distance / fogDistance, 4.0), 0.0, 1.0);
 
     let color = mix(oceanColor, fogColor, fogFactor);
+
     return vec4f(color, 1.0);
 }

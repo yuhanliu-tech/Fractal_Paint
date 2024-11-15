@@ -55,7 +55,12 @@ export class OceanSurface {
                         access: "write-only",
                         format: "rgba8unorm"
                     }
-                }
+                },
+                {   // time
+                    binding: 3,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: { type: "uniform" }
+                },
             ]
         });
 

@@ -10,6 +10,7 @@ export class OceanSurfaceChunk {
     normalTexture: GPUTexture;
 
     positionBuffer: GPUBuffer;
+    timeBuffer: GPUBuffer;
 
     computeBindGroup: GPUBindGroup;
     renderBindGroup: GPUBindGroup;
@@ -25,6 +26,13 @@ export class OceanSurfaceChunk {
             label: "chunk position",
             size: 2 * 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+
+        // Buffer to hold the time value
+        this.timeBuffer = renderer.device.createBuffer({
+            label: "time buffer",
+            size: 4, // float32
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
         // Setting up textures and making a bind group for them
@@ -45,7 +53,8 @@ export class OceanSurfaceChunk {
             entries: [
                 { binding: 0, resource: { buffer: this.positionBuffer } },
                 { binding: 1, resource: this.displacementTexture.createView() },
-                { binding: 2, resource: this.normalTexture.createView() }
+                { binding: 2, resource: this.normalTexture.createView() },
+                { binding: 3, resource: { buffer: this.timeBuffer } }, // Add time buffer here
             ]
         });
 
@@ -61,5 +70,9 @@ export class OceanSurfaceChunk {
 
     public updatePosition(x: number, y: number) {
         renderer.device.queue.writeBuffer(this.positionBuffer, 0, new Float32Array([x, y]))
+    }
+
+    public updateTime(time: number) {
+        renderer.device.queue.writeBuffer(this.timeBuffer,0,new Float32Array([time]));
     }
 }
