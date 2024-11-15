@@ -127,12 +127,12 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let x = f32(globalIdx.x);
     let y = f32(globalIdx.y);
 
-    let iterations = 28;
+    let iterations = 38;
     let depth = 1.f;
 
     // Calculate the wave phase
     var position = vec2f(x, y) + world_position;
-    let wave_amplitude = perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
+    let wave_amplitude = 0.5 * perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
 
     var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude;
 
