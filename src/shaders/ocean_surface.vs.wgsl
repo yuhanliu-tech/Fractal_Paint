@@ -23,7 +23,6 @@ fn main(in: VertexInput) -> VertexOutput
 
     let modelPos = vec4f(
         in.pos.x - 512 + cameraUniforms.cameraPos.x,
-        // 0,
         f32(displacement) * 10,
         in.pos.y - 512 + cameraUniforms.cameraPos.z,
         1

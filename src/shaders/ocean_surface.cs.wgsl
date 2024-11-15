@@ -42,6 +42,84 @@ fn perlinNoise(uv: vec2<f32>) -> f32 {
     return surfletSum;
 }
 
+fn getwaves(position: vec2<f32>, iterations: i32) -> f32 {
+
+    var pos = position;
+
+    // copied this all because am lazy
+    var wave_frequency = 0.1; 
+    var iter = 0.f; 
+    var sumOfValues = 0.f;
+    var sumOfWeights = 0.f;
+    var timeMultiplier = 2.f;
+    var weight = 1.f;
+    let DRAG_MULT = 0.48;
+    let wave_phase = length(pos) * 0.1;
+
+    // iterate through octaves
+    for(var i=0; i < iterations; i++) {
+
+        let p = vec2f(sin(iter), cos(iter));
+
+        // TODO: MULTIPLY TIME WITH TIME MULTIPLIER HERE
+        var res = wavedx(position, p, wave_frequency, timeMultiplier + wave_phase);
+
+        pos += p * res.y * weight * DRAG_MULT;
+
+        sumOfValues += res.x * weight;
+        sumOfWeights += weight;
+
+        // next octave
+        weight = mix(weight, 0.0, 0.2);
+        wave_frequency *= 1.18;
+        timeMultiplier *= 1.07;
+
+        iter += 123283.963;
+    }
+    return sumOfValues / sumOfWeights;
+}
+
+fn wavedx(position: vec2<f32>, 
+direction: vec2<f32>, 
+frequency: f32,
+timeshift: f32) -> vec2<f32> {
+    let x = dot(direction, position) * frequency + timeshift;
+    let wave = exp(sin(x) - 1.0);
+    let dx = wave * cos(x);
+    return vec2(wave, -dx);
+}
+
+fn normal(pos: vec2<f32>, e: f32, depth: f32, wave_amplitude: f32) -> vec3<f32> {
+  
+    let ITERATIONS_NORMAL = 18;
+    let ex = vec2(e, 0);
+    let height = getwaves(pos.xy, ITERATIONS_NORMAL) * depth;
+    let a = vec3(pos.x, height, pos.y);
+    return normalize(
+    cross(
+        a - vec3(pos.x - e, getwaves(pos.xy - ex.xy, ITERATIONS_NORMAL) * depth, pos.y), 
+        a - vec3(pos.x, getwaves(pos.xy + ex.yx, ITERATIONS_NORMAL) * depth, pos.y + e)
+    )
+    );
+}
+
+fn blugausnoise(c1: vec2<f32>) -> f32 {
+
+    let cx = vec3<f32>(c1.x + vec3<f32>(-1,0,1));
+    let f0 = fract(vec4<f32>(cx * 9.1031, c1.y * 8.1030));
+    let f1 = fract(vec4<f32>(cx * 7.0973, c1.y * 6.0970));
+	let t0 = vec4<f32>(f0.xw, f1.xw);
+	let t1 = vec4<f32>(f0.yw, f1.yw);
+	let t2 = vec4<f32>(f0.zw, f1.zw);
+    let p0 = vec4<f32>(t0 + dot(t0, t0.wzxy + 19.19));
+    let p1 = vec4<f32>(t1 + dot(t1, t1.wzxy + 19.19));
+    let p2 = vec4<f32>(t2 + dot(t2, t2.wzxy + 19.19));
+	let n0 = fract(vec4<f32>(p0.zywx * (p0.xxyz + p0.yzzw)));
+	let n1 = fract(vec4<f32>(p1.zywx* (p1.xxyz+ p1.yzzw)));
+	let n2 = fract(vec4<f32>(p2.zywx* (p2.xxyz+ p2.yzzw)));
+    return dot(0.5 * n1 - 0.125 * (n0 + n2), vec4<f32>(1));
+}
+
 @compute
 @workgroup_size(16, 16)
 fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
@@ -49,31 +127,20 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let x = f32(globalIdx.x);
     let y = f32(globalIdx.y);
 
-    // Ocean settings
-    let wave_amplitude = 1.0;        // Amplitude of the waves
-    let wave_frequency = 0.1;        // Frequency of the waves
-    let wave_direction = normalize(vec2f(1.0, 0.5)); // Direction of the waves
-    let phase_shift = 0.0;  
+    let iterations = 28;
+    let depth = 1.f;
 
     // Calculate the wave phase
-    let position = vec2f(x, y);
-    let wave_phase = wave_frequency * dot(position, wave_direction) + phase_shift;
+    var position = vec2f(x, y) + world_position;
+    let wave_amplitude = 1.0 + perlinNoise(position / 40); // need a better way of adding perlin noise for randomness maybe??
 
-     // Compute Gerstner wave height and horizontal displacement
-    let wave_height = wave_amplitude * sin(wave_phase) * 0.5;
-    let horizontal_displacement = wave_amplitude * cos(wave_phase) * wave_direction;
+    var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude;
 
-    let uv = vec2<f32>(x, y) + world_position + horizontal_displacement;
-    let noise = wave_height * perlinNoise(uv / 10.0f);
+    textureStore(displacementMap, globalIdx.xy, vec4(wave_height, 0, 0, 1));
 
-    textureStore(displacementMap, globalIdx.xy, vec4(noise, 0, 0, 0));
-
-    // Calculate normals using partial derivatives based on displaced positions
-    let dx = wave_amplitude * -wave_frequency * cos(wave_phase) * wave_direction.x;
-    let dy = wave_amplitude * -wave_frequency * cos(wave_phase) * wave_direction.y;
-    let normal = normalize(vec3f(-dx, -dy, 1.0)) * perlinNoise(uv / 10.0f) * wave_height;
+    let normal = normal(position, 0.01, depth, wave_amplitude);
     
     // Store the computed normal in the normal map
-    textureStore(normalMap, globalIdx.xy, vec4f(normal * 0.5 + 0.5, 1.0));  // Map from [-1, 1] to [0, 1]
+    textureStore(normalMap, globalIdx.xy, vec4f(normal + 0.5, 1.0));  // Map from [-1, 1] to [0, 1]
 
 }

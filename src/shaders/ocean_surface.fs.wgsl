@@ -8,26 +8,25 @@ struct FragmentInput
     @location(1) texCoord: vec2f,
 }
 
+
+// Adjust this value to control how far the fog extends
+const fogDistance: f32 = 550.0;
+const fogColor: vec3f = vec3<f32>(0.0, 0.0, 0.0); // background (and thus fog) is currently black
+
 @fragment
 fn main(in: FragmentInput) -> @location(0) vec4f
 {
-    // TODO: uvs that aren't cursed
+    // not cursed texture sampling for ocean color :)
     let uv = vec2f(in.texCoord) / 1024;
     let normal = textureSample(normalMap, texSampler, uv);
-    // let nor = vec3<f32>(normal.x, normal.y, normal.z);
+    let oceanColor = vec3<f32>(0, normal.x * 0.65, normal.z * 0.85);
 
-    // let viewDir = normalize(vec3<f32>(cameraUniforms.cameraPos.x, cameraUniforms.cameraPos.y, cameraUniforms.cameraPos.z) - in.pos);
-    // let lightDir = normalize(vec3<f32>(0,10,0) - in.pos);
+    // distance from the camera to the fragment
+    let fragToCamera = in.pos - vec3(cameraUniforms.cameraPos.xyz);
+    let distance = length(fragToCamera);
 
-    // // Calculate diffuse lighting
-    // let diffuse = max(dot(nor, lightDir), 0.0);
+    let fogFactor = clamp(distance / fogDistance, 0.0, 1.0);
 
-    // // Calculate specular lighting
-    // let halfDir = normalize(viewDir + lightDir);
-    // let specular = pow(max(dot(nor, halfDir), 0.0), 32);
-
-    // let color = vec3<f32>(1, 0, 0) * diffuse * 10 + specularColor * specular * 10;
-    // return vec4(color, 0.8);
-    let color =  vec3<f32>(0, normal.x * 0.45, normal.z * 0.65);
-    return vec4f(color, 1);
+    let color = mix(oceanColor, fogColor, fogFactor);
+    return vec4f(color, 1.0);
 }
