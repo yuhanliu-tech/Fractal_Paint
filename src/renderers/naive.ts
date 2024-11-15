@@ -172,7 +172,7 @@ export class NaiveRenderer extends renderer.Renderer {
                 {
                     view: canvasTextureView,
                     clearValue: [0, 0, 0, 0],
-                    loadOp: "clear",    // TODO: change loadOp when rendering on top of other stuff
+                    loadOp: "clear", 
                     storeOp: "store"
                 },
             ],
@@ -185,7 +185,6 @@ export class NaiveRenderer extends renderer.Renderer {
         });
         oceanSurfaceRenderPass.setPipeline(this.oceanSurfaceRenderPipeline);
         oceanSurfaceRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
-        // TODO: Bind group for chunk position
         oceanSurfaceRenderPass.setBindGroup(1, this.chunk.renderBindGroup);
 
         oceanSurfaceRenderPass.setVertexBuffer(0, this.oceanSurface.vertexBuffer);

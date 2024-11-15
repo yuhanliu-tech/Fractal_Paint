@@ -28,6 +28,6 @@ fn main(in: FragmentInput) -> @location(0) vec4f
 
     // let color = vec3<f32>(1, 0, 0) * diffuse * 10 + specularColor * specular * 10;
     // return vec4(color, 0.8);
-    let color =  vec3<f32>(0, normal.x * 0.9, normal.z * 0.5);
+    let color =  vec3<f32>(0, normal.x * 0.45, normal.z * 0.65);
     return vec4f(color, 1);
 }
