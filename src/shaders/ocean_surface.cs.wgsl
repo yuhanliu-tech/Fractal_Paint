@@ -3,6 +3,8 @@
 @group(0) @binding(2) var normalMap: texture_storage_2d<rgba8unorm, write>;
 @group(0) @binding(3) var<uniform> time: f32;
 
+// helpful reference: https://www.shadertoy.com/view/MdXyzX
+
 const u_wind = vec2<f32>(1, 0);
 const u_amplitude = f32(20.0);
 const u_g = f32(9.81);
