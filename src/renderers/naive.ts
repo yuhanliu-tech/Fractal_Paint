@@ -126,13 +126,17 @@ export class NaiveRenderer extends renderer.Renderer {
     }
 
     override draw() {
+
         this.chunk.updatePosition(this.camera.cameraPos[0], this.camera.cameraPos[2]);
+        
+        const currentTime = performance.now() * 0.001; // Convert to seconds
+        this.chunk.updateTime(currentTime);
 
         const encoder = renderer.device.createCommandEncoder();
         this.oceanSurface.computeTextures(encoder, this.chunk);
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
-        const renderPass = encoder.beginRenderPass({
+        /*const renderPass = encoder.beginRenderPass({
             label: "naive render pass",
             colorAttachments: [
                 {
@@ -162,7 +166,7 @@ export class NaiveRenderer extends renderer.Renderer {
             renderPass.drawIndexed(primitive.numIndices);
         });
 
-        renderPass.end();
+        renderPass.end();*/
 
         const oceanSurfaceRenderPass = encoder.beginRenderPass({
             label: "ocean surface render pass",
@@ -170,20 +174,19 @@ export class NaiveRenderer extends renderer.Renderer {
                 {
                     view: canvasTextureView,
                     clearValue: [0, 0, 0, 0],
-                    loadOp: "load",    // TODO: change loadOp when rendering on top of other stuff
+                    loadOp: "clear", // load
                     storeOp: "store"
                 },
             ],
             depthStencilAttachment: {
                 view: this.depthTextureView,
                 depthClearValue: 1.0,
-                depthLoadOp: "load",
+                depthLoadOp: "clear", // load 
                 depthStoreOp: "store"
             }
         });
         oceanSurfaceRenderPass.setPipeline(this.oceanSurfaceRenderPipeline);
         oceanSurfaceRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
-        // TODO: Bind group for chunk position
         oceanSurfaceRenderPass.setBindGroup(1, this.chunk.renderBindGroup);
 
         oceanSurfaceRenderPass.setVertexBuffer(0, this.oceanSurface.vertexBuffer);

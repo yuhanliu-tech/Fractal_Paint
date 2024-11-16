@@ -55,7 +55,12 @@ export class OceanSurface {
                         access: "write-only",
                         format: "rgba8unorm"
                     }
-                }
+                },
+                {   // time
+                    binding: 3,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: { type: "uniform" }
+                },
             ]
         });
 
@@ -76,7 +81,7 @@ export class OceanSurface {
                     binding: 2,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     sampler: {}
-                },
+                }
             ]
         })
 

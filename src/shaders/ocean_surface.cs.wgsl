@@ -1,6 +1,14 @@
 @group(0) @binding(0) var<uniform> world_position: vec2f;
 @group(0) @binding(1) var displacementMap: texture_storage_2d<r32float, write>;
 @group(0) @binding(2) var normalMap: texture_storage_2d<rgba8unorm, write>;
+@group(0) @binding(3) var<uniform> time: f32;
+
+// helpful reference: https://www.shadertoy.com/view/MdXyzX
+
+const u_wind = vec2<f32>(1, 0);
+const u_amplitude = f32(20.0);
+const u_g = f32(9.81);
+const l = 100.0;
 
 fn random2(p: vec2<f32>) -> vec2<f32> {
     return fract(sin(vec2(dot(p, vec2(127.1f, 311.7f)),
@@ -36,17 +44,74 @@ fn perlinNoise(uv: vec2<f32>) -> f32 {
     return surfletSum;
 }
 
+fn getwaves(position: vec2<f32>, iterations: i32) -> f32 {
+
+    var pos = position;
+
+    // copied this all because am lazy
+    var wave_frequency = 0.1; 
+    var iter = 0.f; 
+    var sumOfValues = 0.f;
+    var sumOfWeights = 0.f;
+    var timeMultiplier = 2.f;
+    var weight = 1.f;
+    let DRAG_MULT = 0.48;
+    let wave_phase = length(pos) * 0.1;
+
+    // iterate through octaves
+    for(var i=0; i < iterations; i++) {
+
+        let p = vec2f(sin(iter), cos(iter));
+
+        var res = wavedx(position, p, wave_frequency, time * timeMultiplier + wave_phase);
+
+        pos += p * res.y * weight * DRAG_MULT;
+
+        sumOfValues += res.x * weight;
+        sumOfWeights += weight;
+
+        // next octave
+        weight = mix(weight, 0.0, 0.2);
+        wave_frequency *= 1.18;
+        timeMultiplier *= 1.07;
+
+        iter += 123283.963;
+    }
+    return sumOfValues / sumOfWeights;
+}
+
+fn wavedx(position: vec2<f32>, 
+direction: vec2<f32>, 
+frequency: f32,
+timeshift: f32) -> vec2<f32> {
+    let x = dot(direction, position) * frequency + timeshift;
+    let wave = exp(sin(x) - 1.0);
+    let dx = wave * cos(x);
+    return vec2(wave, -dx);
+}
+
+fn normal(pos: vec2<f32>, e: f32, depth: f32, wave_amplitude: f32) -> vec3<f32> {
+  
+    let ITERATIONS_NORMAL = 18;
+    let ex = vec2(e, 0);
+    let height = getwaves(pos.xy, ITERATIONS_NORMAL) * depth;
+    let a = vec3(pos.x, height, pos.y);
+    return normalize(
+    cross(
+        a - vec3(pos.x - e, getwaves(pos.xy - ex.xy, ITERATIONS_NORMAL) * depth, pos.y), 
+        a - vec3(pos.x, getwaves(pos.xy + ex.yx, ITERATIONS_NORMAL) * depth, pos.y + e)
+    )
+    );
+}
+
 fn blugausnoise(c1: vec2<f32>) -> f32 {
-    //c1 += 0.07* fract(iTime);
-    
-    //vec2 c0 = vec2(c1.x- 1.,c1.y);
-    //vec2 c2 = vec2(c1.x+ 1.,c1.y);
+
     let cx = vec3<f32>(c1.x + vec3<f32>(-1,0,1));
     let f0 = fract(vec4<f32>(cx * 9.1031, c1.y * 8.1030));
     let f1 = fract(vec4<f32>(cx * 7.0973, c1.y * 6.0970));
-	let t0 = vec4<f32>(f0.xw, f1.xw);//fract(c0.xyxy* vec4(.1031,.1030,.0973,.0970));
-	let t1 = vec4<f32>(f0.yw, f1.yw);//fract(c1.xyxy* vec4(.1031,.1030,.0973,.0970));
-	let t2 = vec4<f32>(f0.zw, f1.zw);//fract(c2.xyxy* vec4(.1031,.1030,.0973,.0970));
+	let t0 = vec4<f32>(f0.xw, f1.xw);
+	let t1 = vec4<f32>(f0.yw, f1.yw);
+	let t2 = vec4<f32>(f0.zw, f1.zw);
     let p0 = vec4<f32>(t0 + dot(t0, t0.wzxy + 19.19));
     let p1 = vec4<f32>(t1 + dot(t1, t1.wzxy + 19.19));
     let p2 = vec4<f32>(t2 + dot(t2, t2.wzxy + 19.19));
@@ -56,75 +121,27 @@ fn blugausnoise(c1: vec2<f32>) -> f32 {
     return dot(0.5 * n1 - 0.125 * (n0 + n2), vec4<f32>(1));
 }
 
-// COMPLEX OPERATIONS
-fn conj(a: vec2<f32>) -> vec2<f32> {
-    return vec2<f32>(a.x, -a.y);
-}
-
-const u_wind = vec2<f32>(1, 0);
-const u_amplitude = f32(20.0);
-const u_g = f32(9.81);
-const l = 100.0;
-
-fn philips(wave_vector: vec2<f32>) -> f32 {
-    let k = sqrt(wave_vector.x * wave_vector.x + wave_vector.y * wave_vector.y);
-    if (k == 0.0) {
-        return 0.0;
-    }
-    
-    // let V = length(u_wind);
-    // let Lp = V*V/u_g;
-    // var k = length(wave_vector);
-    // k = max(k, 0.1);
-    // return clamp(sqrt(
-    //         u_amplitude
-    //         *pow(dot(normalize(wave_vector), normalize(u_wind)), 2.0)
-    //         *exp(-1.f/(pow(k*Lp,2.0)))
-    //         // *exp(-1.f*pow(k*l,2.0))
-    //     )/(k*k), -4000, 4000);
-
-    let L2 = l * l;
-    let k_dot_w = (wave_vector.x * u_wind.x + wave_vector.y * u_wind.y) / k;
-    let P = u_amplitude * exp(-1.0 / (k * k * L2)) / (k * k * k * k) * pow(k_dot_w, 2);
-    return P;
-
-    // let p1 = u_amplitude / (k * k * k * k);
-    // let p2 = dot(normalize(wave_vector), normalize(u_wind));
-    // let p3 = exp(-1.0 / (k * Lp) * (k * Lp));
-    // let p4 = exp(-1.0 * k * k * l * l);
-    // return sqrt(p1 * p2 * p2 * p3);
-    // return clamp(sqrt(
-    //         u_amplitude
-    //         *pow(, 2.0)
-    //         *exp(-1.f/(pow(k*Lp,2.0)))
-    //         *exp(-1.f*pow(k*l,2.0))
-    //     )/(k*k), 0, 4000);  
-}
-
 @compute
 @workgroup_size(16, 16)
 fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
-    if (globalIdx.x >= 1024 || globalIdx.y >= 1024) {
-        return;
-    }
 
     let x = f32(globalIdx.x);
     let y = f32(globalIdx.y);
 
-    let uv = vec2<f32>(x, y) + world_position;
-    let noise = perlinNoise(uv / 50.0f);
-    let noise2 = blugausnoise(vec2<f32>(x, y) + world_position);
+    let iterations = 38;
+    let depth = 1.f;
+
+    // Calculate the wave phase
+    var position = vec2f(x, y) + world_position;
+    let wave_amplitude = 0.5 * perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
+
+    var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude;
+
+    textureStore(displacementMap, globalIdx.xy, vec4(wave_height, 0, 0, 1));
+
+    let normal = normal(position, 0.01, depth, wave_amplitude);
     
-    let wave_vector = vec2<f32>(2.0 * PI * fract(uv.x / 1024.0), 2.0 * PI * fract(uv.y / 1024.0));
+    // Store the computed normal in the normal map
+    textureStore(normalMap, globalIdx.xy, vec4f(normal + 0.5, 1.0));  // Map from [-1, 1] to [0, 1]
 
-    let vp = philips(wave_vector);
-    let vn = philips(-wave_vector);
-
-    let h = noise2 * sqrt(vp / 2.0);
-    //let h = f32(noise2 * vp);
-    //let h_est = conj(vec2<f32>(noise2 * vn));
-
-    textureStore(displacementMap, globalIdx.xy, vec4(2 * noise, 0, 0, 0));
-    textureStore(normalMap, globalIdx.xy, vec4f(2 * noise, 0, 1, 1));
 }
-

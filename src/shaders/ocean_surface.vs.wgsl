@@ -11,6 +11,7 @@ struct VertexOutput
     @builtin(position) fragPos: vec4f,
     @location(0) pos: vec3f,
     @location(1) texCoord: vec2f,
+    @location(2) worldPosition: vec2f,
 }
 
 @vertex
@@ -23,7 +24,6 @@ fn main(in: VertexInput) -> VertexOutput
 
     let modelPos = vec4f(
         in.pos.x - 512 + cameraUniforms.cameraPos.x,
-        // 0,
         f32(displacement) * 10,
         in.pos.y - 512 + cameraUniforms.cameraPos.z,
         1
