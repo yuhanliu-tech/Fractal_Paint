@@ -5,11 +5,49 @@
 
 // helpful reference: https://www.shadertoy.com/view/MdXyzX
 
-const u_wind = vec2<f32>(1, 0);
-const u_amplitude = f32(20.0);
-const u_g = f32(9.81);
 const PI = 3.14159265358979323846264; // Life of π
-const l = 100.0;
+
+const TILE_SIZE = 100.0; // Size of the hexagonal tiles
+const NUM_TILES = 3;     // Number of overlapping tiles
+const ITERATIONS = 39;
+
+// functions for publication implementation 
+//(http://arnaud-schoentgen.com/publication/2024_orientable_ocean/2024_orientable_ocean.pdf)
+
+// resources: 
+// https://www.shadertoy.com/view/McycDh
+// https://www.shadertoy.com/view/McycW1
+fn HexagonalLength(uv: vec2<f32>) -> f32
+{
+    let uvNew = abs(uv);
+    var dist = dot(uvNew, normalize(vec2(1.0, sqrt(3.0))));
+    dist = max(dist, uvNew.x);
+    return dist;
+}
+
+fn DistanceToHexEdge(uv: vec2<f32>) -> f32
+{
+    return -HexagonalLength(uv) + 0.5;
+}
+
+// Hexagonal grid function
+fn hex_grid(p: vec2<f32>) -> vec2<f32> {
+    var pNew = abs(p);
+    let q = vec2<f32>(sqrt(3.0) * 0.5, 1.5) * p;
+    return floor(q + vec2(0.5, 0.5));
+    //return max(dot(pNew, vec2(1.7320508, 1) * 0.5), pNew.y);
+}
+
+fn barycentric_weight(center: vec2<f32>, pos: vec2<f32>) -> f32 {
+    let dist = length(pos - center) / (TILE_SIZE * 0.5); // Use half the tile size for a smoother falloff
+    return max(1.0 - dist, 0.0); // Wider blending range
+}
+
+// Sample from an exemplar texture with a random offset
+fn exemplar_sample(pos: vec2<f32>, tile_idx: vec2<f32>) -> f32 {
+    let offset = random2(tile_idx) * TILE_SIZE * 0.5; // Increase randomness for h(k_i(x)): Random offset
+    return getwaves(pos + offset); // E(x + h(k_i(x))): Content of the exemplar
+}
 
 fn random2(p: vec2<f32>) -> vec2<f32> {
     return fract(sin(vec2(dot(p, vec2(127.1f, 311.7f)),
@@ -45,7 +83,7 @@ fn perlinNoise(uv: vec2<f32>) -> f32 {
     return surfletSum;
 }
 
-fn getwaves(position: vec2<f32>, iterations: i32) -> f32 {
+fn getwaves(position: vec2<f32>) -> f32 {
 
     var pos = position;
 
@@ -60,7 +98,7 @@ fn getwaves(position: vec2<f32>, iterations: i32) -> f32 {
     let wave_phase = length(pos) * 0.1;
 
     // iterate through octaves
-    for(var i=0; i < iterations; i++) {
+    for(var i=0; i < ITERATIONS; i++) {
 
         let p = vec2f(sin(iter), cos(iter));
 
@@ -93,33 +131,15 @@ timeshift: f32) -> vec2<f32> {
 
 fn normal(pos: vec2<f32>, e: f32, depth: f32, wave_amplitude: f32) -> vec3<f32> {
   
-    let ITERATIONS_NORMAL = 18;
     let ex = vec2(e, 0);
-    let height = getwaves(pos.xy, ITERATIONS_NORMAL) * depth;
+    let height = getwaves(pos.xy) * depth;
     let a = vec3(pos.x, height, pos.y);
     return normalize(
     cross(
-        a - vec3(pos.x - e, getwaves(pos.xy - ex.xy, ITERATIONS_NORMAL) * depth, pos.y), 
-        a - vec3(pos.x, getwaves(pos.xy + ex.yx, ITERATIONS_NORMAL) * depth, pos.y + e)
+        a - vec3(pos.x - e, getwaves(pos.xy - ex.xy) * depth, pos.y), 
+        a - vec3(pos.x, getwaves(pos.xy + ex.yx) * depth, pos.y + e)
     )
     );
-}
-
-fn blugausnoise(c1: vec2<f32>) -> f32 {
-
-    let cx = vec3<f32>(c1.x + vec3<f32>(-1,0,1));
-    let f0 = fract(vec4<f32>(cx * 9.1031, c1.y * 8.1030));
-    let f1 = fract(vec4<f32>(cx * 7.0973, c1.y * 6.0970));
-	let t0 = vec4<f32>(f0.xw, f1.xw);
-	let t1 = vec4<f32>(f0.yw, f1.yw);
-	let t2 = vec4<f32>(f0.zw, f1.zw);
-    let p0 = vec4<f32>(t0 + dot(t0, t0.wzxy + 19.19));
-    let p1 = vec4<f32>(t1 + dot(t1, t1.wzxy + 19.19));
-    let p2 = vec4<f32>(t2 + dot(t2, t2.wzxy + 19.19));
-	let n0 = fract(vec4<f32>(p0.zywx * (p0.xxyz + p0.yzzw)));
-	let n1 = fract(vec4<f32>(p1.zywx* (p1.xxyz+ p1.yzzw)));
-	let n2 = fract(vec4<f32>(p2.zywx* (p2.xxyz+ p2.yzzw)));
-    return dot(0.5 * n1 - 0.125 * (n0 + n2), vec4<f32>(1));
 }
 
 @compute
@@ -128,17 +148,36 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
 
     let x = f32(globalIdx.x);
     let y = f32(globalIdx.y);
-
-    let iterations = 38;
     let depth = 1.f;
 
     // Calculate the wave phase
     var position = vec2f(x, y) + world_position;
     let wave_amplitude = 0.5 * perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
+    var wave_height = getwaves(position) * depth - depth + wave_amplitude;
 
-    var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude;
+    // Hexagonal tiling ------------------------------------------------------------------
+    var final_wave_height = wave_height; 
+    var total_weight = 0.0;
+    var exemplar_mean = 0.5;
+    var tile_idx = hex_grid(position / TILE_SIZE + vec2(f32(0)));
+    var tile_sample = exemplar_sample(position, tile_idx); 
+    
 
-    textureStore(displacementMap, globalIdx.xy, vec4(wave_height, 0, 0, 1));
+    for (var i = 0; i < NUM_TILES; i++) {
+        // Hexagonal grid and random offset
+        tile_idx = hex_grid(position / TILE_SIZE + vec2(f32(i)));
+        let center = tile_idx * TILE_SIZE + vec2(TILE_SIZE / 2.0); // Offset by half a tile
+        let weight = barycentric_weight(center, position); // w_i(x)
+        tile_sample = exemplar_sample(position, tile_idx); // E_i(x)
+
+        // sample and blend
+        final_wave_height += weight * (tile_sample - exemplar_mean); // w_i(x) * (E_i(x) - μ)
+        total_weight += weight;
+    }
+
+    textureStore(displacementMap, globalIdx.xy, vec4(final_wave_height, 0, 0, 1));
+
+    // -----------------------------------------------------------------------------------
 
     let normal = normal(position, 0.01, depth, wave_amplitude);
     
