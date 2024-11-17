@@ -36,6 +36,10 @@ export class NaiveRenderer extends renderer.Renderer {
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 },
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.FRAGMENT,
+                }
             ]
         });
 
@@ -136,7 +140,7 @@ export class NaiveRenderer extends renderer.Renderer {
         this.oceanSurface.computeTextures(encoder, this.chunk);
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
-        /*const renderPass = encoder.beginRenderPass({
+        const renderPass = encoder.beginRenderPass({
             label: "naive render pass",
             colorAttachments: [
                 {
@@ -166,33 +170,33 @@ export class NaiveRenderer extends renderer.Renderer {
             renderPass.drawIndexed(primitive.numIndices);
         });
 
-        renderPass.end();*/
+        renderPass.end();
 
-        const oceanSurfaceRenderPass = encoder.beginRenderPass({
-            label: "ocean surface render pass",
-            colorAttachments: [
-                {
-                    view: canvasTextureView,
-                    clearValue: [0, 0, 0, 0],
-                    loadOp: "clear", // load
-                    storeOp: "store"
-                },
-            ],
-            depthStencilAttachment: {
-                view: this.depthTextureView,
-                depthClearValue: 1.0,
-                depthLoadOp: "clear", // load 
-                depthStoreOp: "store"
-            }
-        });
-        oceanSurfaceRenderPass.setPipeline(this.oceanSurfaceRenderPipeline);
-        oceanSurfaceRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
-        oceanSurfaceRenderPass.setBindGroup(1, this.chunk.renderBindGroup);
+        // const oceanSurfaceRenderPass = encoder.beginRenderPass({
+        //     label: "ocean surface render pass",
+        //     colorAttachments: [
+        //         {
+        //             view: canvasTextureView,
+        //             clearValue: [0, 0, 0, 0],
+        //             loadOp: "clear", // load
+        //             storeOp: "store"
+        //         },
+        //     ],
+        //     depthStencilAttachment: {
+        //         view: this.depthTextureView,
+        //         depthClearValue: 1.0,
+        //         depthLoadOp: "clear", // load 
+        //         depthStoreOp: "store"
+        //     }
+        // });
+        // oceanSurfaceRenderPass.setPipeline(this.oceanSurfaceRenderPipeline);
+        // oceanSurfaceRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
+        // oceanSurfaceRenderPass.setBindGroup(1, this.chunk.renderBindGroup);
 
-        oceanSurfaceRenderPass.setVertexBuffer(0, this.oceanSurface.vertexBuffer);
-        oceanSurfaceRenderPass.setIndexBuffer(this.oceanSurface.indexBuffer, 'uint32');
-        oceanSurfaceRenderPass.drawIndexed(this.oceanSurface.numIndices);
-        oceanSurfaceRenderPass.end();
+        // oceanSurfaceRenderPass.setVertexBuffer(0, this.oceanSurface.vertexBuffer);
+        // oceanSurfaceRenderPass.setIndexBuffer(this.oceanSurface.indexBuffer, 'uint32');
+        // oceanSurfaceRenderPass.drawIndexed(this.oceanSurface.numIndices);
+        // oceanSurfaceRenderPass.end();
         renderer.device.queue.submit([encoder.finish()]);
     }
 }
