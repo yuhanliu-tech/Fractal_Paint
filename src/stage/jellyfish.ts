@@ -20,7 +20,6 @@ export class Jellyfish {
     renderBindGroupLayout: GPUBindGroupLayout;
     sampler: GPUSampler;
     renderPipeline: GPURenderPipeline;
-    renderBindGroup: GPUBindGroup;
 
     constructor() {
 

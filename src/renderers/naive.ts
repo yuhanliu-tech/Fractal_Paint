@@ -250,7 +250,7 @@ export class NaiveRenderer extends renderer.Renderer {
         
         jellyfishRenderPass.setPipeline(this.jellyfishPipeline);
         jellyfishRenderPass.setBindGroup(0, this.sceneUniformsBindGroup); // Pass uniforms
-        jellyfishRenderPass.draw(3, 1, 0, 0); // Fullscreen quad
+        jellyfishRenderPass.draw(6); // Fullscreen quad
         jellyfishRenderPass.end();
 
         renderer.device.queue.submit([encoder.finish()]);
