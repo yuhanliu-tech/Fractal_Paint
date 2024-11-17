@@ -4,10 +4,13 @@ import { OceanSurface } from '../stage/oceansurface';
 import * as oceansurface from "../stage/oceansurface"
 import { OceanSurfaceChunk } from '../stage/oceansurfacechunk';
 import { Stage } from '../stage/stage';
+import { Jellyfish } from '../stage/jellyfish';
 
 export class NaiveRenderer extends renderer.Renderer {
     oceanSurface: OceanSurface;
     chunk: OceanSurfaceChunk;
+
+    jellyfish: Jellyfish;
 
     sceneUniformsBindGroupLayout: GPUBindGroupLayout;
     sceneUniformsBindGroup: GPUBindGroup;
@@ -18,6 +21,7 @@ export class NaiveRenderer extends renderer.Renderer {
     pipeline: GPURenderPipeline;
 
     oceanSurfaceRenderPipeline: GPURenderPipeline;
+    jellyfishPipeline: GPURenderPipeline;
 
     constructor(stage: Stage) {
         super(stage);
@@ -27,6 +31,8 @@ export class NaiveRenderer extends renderer.Renderer {
             this.oceanSurface.renderBindGroupLayout,
             this.oceanSurface.sampler
         );
+
+        this.jellyfish = new Jellyfish();
 
         this.sceneUniformsBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "scene uniforms bind group layout",
@@ -89,6 +95,36 @@ export class NaiveRenderer extends renderer.Renderer {
                     }
                 ]
             }
+        });
+
+        this.jellyfishPipeline = renderer.device.createRenderPipeline({
+            layout: renderer.device.createPipelineLayout({
+                label: "jellyfish pipeline layout",
+                bindGroupLayouts: [this.sceneUniformsBindGroupLayout],
+            }),
+            vertex: {
+                module: renderer.device.createShaderModule({
+                    label: "jellyfish vertex shader",
+                    code: shaders.fullscreenVertSrc, // Use a fullscreen quad vertex shader
+                }),
+                buffers: [], // No vertex buffers for fullscreen quad
+            },
+            fragment: {
+                module: renderer.device.createShaderModule({
+                    label: "jellyfish fragment shader",
+                    code: shaders.jellyfishFragSrc,
+                }),
+                targets: [
+                    {
+                        format: renderer.canvasFormat,
+                    },
+                ],
+            },
+            depthStencil: {
+                depthWriteEnabled: false,
+                depthCompare: "always",
+                format: "depth24plus",
+            },
         });
 
         this.oceanSurfaceRenderPipeline = renderer.device.createRenderPipeline({
@@ -193,6 +229,30 @@ export class NaiveRenderer extends renderer.Renderer {
         oceanSurfaceRenderPass.setIndexBuffer(this.oceanSurface.indexBuffer, 'uint32');
         oceanSurfaceRenderPass.drawIndexed(this.oceanSurface.numIndices);
         oceanSurfaceRenderPass.end();
+
+        const jellyfishRenderPass = encoder.beginRenderPass({
+            label: "jellyfish render pass",
+            colorAttachments: [
+                {
+                    view: canvasTextureView,
+                    clearValue: [0, 0, 0, 1],
+                    loadOp: "clear",
+                    storeOp: "store",
+                },
+            ],
+            depthStencilAttachment: {
+                view: this.depthTextureView,
+                depthClearValue: 1.0,
+                depthLoadOp: "clear",
+                depthStoreOp: "store",
+            },
+        });
+        
+        jellyfishRenderPass.setPipeline(this.jellyfishPipeline);
+        jellyfishRenderPass.setBindGroup(0, this.sceneUniformsBindGroup); // Pass uniforms
+        jellyfishRenderPass.draw(3, 1, 0, 0); // Fullscreen quad
+        jellyfishRenderPass.end();
+
         renderer.device.queue.submit([encoder.finish()]);
     }
 }
