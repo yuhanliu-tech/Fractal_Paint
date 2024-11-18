@@ -1,6 +1,7 @@
 import { vec3 } from "wgpu-matrix"
 import * as shaders from '../shaders/shaders';
 import * as renderer from '../renderer';
+import { Stage } from '../stage/stage';
 
 // Vertex buffer layout for a fullscreen quad
 export const vertexBufferLayout: GPUVertexBufferLayout = {
@@ -20,29 +21,27 @@ export class Jellyfish {
     renderBindGroupLayout: GPUBindGroupLayout;
     sampler: GPUSampler;
     renderPipeline: GPURenderPipeline;
+    //renderBindGroup: GPUBindGroup;
 
     constructor() {
 
         this.renderBindGroupLayout = renderer.device.createBindGroupLayout({
-            label: "jellyfish render layout",
+            label: "jellyfish bind group layout",
             entries: [
-                { // displacement
+                {
                     binding: 0,
-                    visibility: GPUShaderStage.VERTEX,
-                    texture: { sampleType: "unfilterable-float" }
-                },
-                { // normals
-                    binding: 1,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    texture: { sampleType: "float" }
-                },
-                { // sampler
-                    binding: 2,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                    sampler: {}
-                }
+                    buffer: { type: "uniform" }
+                },
             ]
         })
+
+        /*this.renderBindGroup = renderer.device.createBindGroup({
+            layout: this.renderBindGroupLayout,
+            entries: [
+                { binding: 0, resource: sampler },
+            ]
+        });*/
 
         this.sampler = renderer.device.createSampler({
             magFilter: 'linear',

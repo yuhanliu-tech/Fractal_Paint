@@ -10,8 +10,6 @@ export class NaiveRenderer extends renderer.Renderer {
     oceanSurface: OceanSurface;
     chunk: OceanSurfaceChunk;
 
-    jellyfish: Jellyfish;
-
     sceneUniformsBindGroupLayout: GPUBindGroupLayout;
     sceneUniformsBindGroup: GPUBindGroup;
 
@@ -21,8 +19,10 @@ export class NaiveRenderer extends renderer.Renderer {
     pipeline: GPURenderPipeline;
 
     oceanSurfaceRenderPipeline: GPURenderPipeline;
-    jellyfishPipeline: GPURenderPipeline;
 
+    jellyfish: Jellyfish;
+    jellyfishPipeline: GPURenderPipeline;
+    
     constructor(stage: Stage) {
         super(stage);
         this.oceanSurface = new OceanSurface();
@@ -31,8 +31,6 @@ export class NaiveRenderer extends renderer.Renderer {
             this.oceanSurface.renderBindGroupLayout,
             this.oceanSurface.sampler
         );
-
-        this.jellyfish = new Jellyfish();
 
         this.sceneUniformsBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "scene uniforms bind group layout",
@@ -96,6 +94,8 @@ export class NaiveRenderer extends renderer.Renderer {
                 ]
             }
         });
+
+        this.jellyfish = new Jellyfish();
 
         this.jellyfishPipeline = renderer.device.createRenderPipeline({
             layout: renderer.device.createPipelineLayout({

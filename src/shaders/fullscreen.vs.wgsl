@@ -5,6 +5,8 @@ struct VertexOutput {
 
 @vertex
 fn main(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
+
+    
     // Define positions for a full-screen quad
     var positions = array<vec2f, 6>(
         vec2f(-1.0, -1.0), // Bottom-left
@@ -29,4 +31,6 @@ fn main(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
     out.fragPos = vec4f(positions[vertexIndex], 0.0, 1.0); // Full-screen quad positions
     out.texCoord = texCoords[vertexIndex]; // Corresponding texture coordinates
     return out;
+
+
 }
