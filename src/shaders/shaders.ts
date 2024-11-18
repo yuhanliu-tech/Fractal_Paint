@@ -17,6 +17,10 @@ import oceanSurfaceVertRaw from './ocean_surface.vs.wgsl?raw';
 import oceanSurfaceFragRaw from './ocean_surface.fs.wgsl?raw';
 import oceanSurfaceComputeRaw from './ocean_surface.cs.wgsl?raw';
 
+import oceanFloorVertRaw from './ocean_floor.vs.wgsl?raw';
+import oceanFloorFragRaw from './ocean_floor.fs.wgsl?raw';
+import oceanFloorComputeRaw from './ocean_floor.cs.wgsl?raw';
+
 // CONSTANTS (for use in shaders)
 // =================================
 
@@ -66,3 +70,7 @@ export const clusteringComputeSrc: string = processShaderRaw(clusteringComputeRa
 export const oceanSurfaceVertSrc: string = processShaderRaw(oceanSurfaceVertRaw);
 export const oceanSurfaceFragSrc: string = processShaderRaw(oceanSurfaceFragRaw);
 export const oceanSurfaceComputeSrc: string = processShaderRaw(oceanSurfaceComputeRaw);
+
+export const oceanFloorVertSrc: string = processShaderRaw(oceanFloorVertRaw);
+export const oceanFloorFragSrc: string = processShaderRaw(oceanFloorFragRaw);
+export const oceanFloorComputeSrc: string = processShaderRaw(oceanFloorComputeRaw);

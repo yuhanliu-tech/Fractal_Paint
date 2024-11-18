@@ -3,11 +3,18 @@ import * as shaders from '../shaders/shaders';
 import { OceanSurface } from '../stage/oceansurface';
 import * as oceansurface from "../stage/oceansurface"
 import { OceanSurfaceChunk } from '../stage/oceansurfacechunk';
+import { OceanFloor } from '../stage/oceanfloor';
+import * as oceanfloor from "../stage/oceanfloor"
+import { OceanFloorChunk } from '../stage/oceanfloorchunk';
 import { Stage } from '../stage/stage';
 
 export class NaiveRenderer extends renderer.Renderer {
     oceanSurface: OceanSurface;
     chunk: OceanSurfaceChunk;
+
+    oceanFloor: OceanFloor;
+    oceanFloorChunk: OceanFloorChunk;
+
 
     sceneUniformsBindGroupLayout: GPUBindGroupLayout;
     sceneUniformsBindGroup: GPUBindGroup;
@@ -18,6 +25,7 @@ export class NaiveRenderer extends renderer.Renderer {
     pipeline: GPURenderPipeline;
 
     oceanSurfaceRenderPipeline: GPURenderPipeline;
+    oceanFloorRenderPipeline: GPURenderPipeline;
 
     constructor(stage: Stage) {
         super(stage);
@@ -26,6 +34,13 @@ export class NaiveRenderer extends renderer.Renderer {
             this.oceanSurface.computeBindGroupLayout,
             this.oceanSurface.renderBindGroupLayout,
             this.oceanSurface.sampler
+        );
+
+        this.oceanFloor = new OceanFloor();
+        this.oceanFloorChunk = new OceanFloorChunk(
+            this.oceanFloor.computeBindGroupLayout,
+            this.oceanFloor.renderBindGroupLayout,
+            this.oceanFloor.sampler
         );
 
         this.sceneUniformsBindGroupLayout = renderer.device.createBindGroupLayout({
@@ -123,17 +138,53 @@ export class NaiveRenderer extends renderer.Renderer {
                 ]
             }
         })
+
+        this.oceanFloorRenderPipeline = renderer.device.createRenderPipeline({
+            layout: renderer.device.createPipelineLayout({
+                label: "ocean floor pipeline layout",
+                bindGroupLayouts: [
+                    this.sceneUniformsBindGroupLayout,
+                    this.oceanFloor.renderBindGroupLayout
+                ]
+            }),
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: "less",
+                format: "depth24plus"
+            },
+            vertex: {
+                module: renderer.device.createShaderModule({
+                    label: "ocean floor vertex shader",
+                    code: shaders.oceanFloorVertSrc
+                }),
+                buffers: [oceanfloor.vertexBufferLayout]
+            },
+            fragment: {
+                module: renderer.device.createShaderModule({
+                    label: "ocean floor frag shader",
+                    code: shaders.oceanFloorFragSrc,
+                }),
+                targets: [
+                    {
+                        format: renderer.canvasFormat,
+                    }
+                ]
+            }
+        })
     }
 
     override draw() {
 
         this.chunk.updatePosition(this.camera.cameraPos[0], this.camera.cameraPos[2]);
-        
+        this.oceanFloorChunk.updatePosition(this.camera.cameraPos[0], this.camera.cameraPos[2]);
+
         const currentTime = performance.now() * 0.001; // Convert to seconds
         this.chunk.updateTime(currentTime);
+        this.oceanFloorChunk.updateTime(currentTime);
 
         const encoder = renderer.device.createCommandEncoder();
         this.oceanSurface.computeTextures(encoder, this.chunk);
+        this.oceanFloor.computeTextures(encoder, this.oceanFloorChunk);
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
         /*const renderPass = encoder.beginRenderPass({
@@ -193,6 +244,33 @@ export class NaiveRenderer extends renderer.Renderer {
         oceanSurfaceRenderPass.setIndexBuffer(this.oceanSurface.indexBuffer, 'uint32');
         oceanSurfaceRenderPass.drawIndexed(this.oceanSurface.numIndices);
         oceanSurfaceRenderPass.end();
+
+        const oceanFloorRenderPass = encoder.beginRenderPass({
+            label: "ocean floor render pass",
+            colorAttachments: [
+                {
+                    view: canvasTextureView,
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "load",
+                    storeOp: "store"
+                },
+            ],
+            depthStencilAttachment: {
+                view: this.depthTextureView,
+                depthClearValue: 1.0,
+                depthLoadOp: "load",
+                depthStoreOp: "store"
+            }
+        });
+        oceanFloorRenderPass.setPipeline(this.oceanFloorRenderPipeline);
+        oceanFloorRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
+        oceanFloorRenderPass.setBindGroup(1, this.oceanFloorChunk.renderBindGroup);
+
+        oceanFloorRenderPass.setVertexBuffer(0, this.oceanFloor.vertexBuffer);
+        oceanFloorRenderPass.setIndexBuffer(this.oceanFloor.indexBuffer, 'uint32');
+        oceanFloorRenderPass.drawIndexed(this.oceanFloor.numIndices);
+        oceanFloorRenderPass.end();
+
         renderer.device.queue.submit([encoder.finish()]);
     }
 }
