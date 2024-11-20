@@ -1,4 +1,6 @@
 @group(${bindGroup_scene}) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
+//@group(${bindGroup_scene}) @binding(1) var diffuseTex: texture_2d<f32>;
+//@group(${bindGroup_scene}) @binding(2) var diffuseTexSampler: sampler;
 
 // reference: https://www.shadertoy.com/view/McGcWW
 
@@ -229,7 +231,7 @@ fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
     o.m = 1.0;
     
     if (pNew.y < 0.5) {
-        var sway: f32 = sin(/*t +*/ pNew.y + N * twopi) * smoothstep(-3.0, 0.5, pNew.y) * N * 0.3;
+        var sway: f32 = 0.f; //sin(/*t +*/ pNew.y + N * twopi) * smoothstep(-3.0, 0.5, pNew.y) * N * 0.3;
         pNew.x += sway * N;  // Add some sway to the tentacles
         pNew.z += sway * (1.0 - N);
         
@@ -462,7 +464,7 @@ fn render(uv: vec2<f32>, camRay: Ray, depth: f32, bg: vec3<f32>, accent: vec3<f3
         } else if (o.m == 3.0) {  // Outside tentacles
             var dif: vec3<f32> = accent;
             var d: f32 = smoothstep(13.0, 100.0, o.d);
-            col = mix(bg, dif, pow(1.0 - fresnel, 5.0) * d);
+            col = mix(bg, dif, pow(1.0 - fresnel, 5.0)); // col = mix(bg, dif, pow(1.-fresnel, 5.)*d);
         }
 
         fade = max(fade, smoothstep(0.0, 100.0, o.d));
@@ -481,13 +483,29 @@ fn render(uv: vec2<f32>, camRay: Ray, depth: f32, bg: vec3<f32>, accent: vec3<f3
 @fragment
 fn main(in: FragmentInput) -> @location(0) vec4f {
 
+    // try to get passthrough -------------------------------------
+    /*
+    let diffuseColor = textureSample(diffuseTex, diffuseTexSampler, in.texCoord);
+    var finalColor = diffuseColor.rgb;
+    return vec4(finalColor, 1);
+    */
+    //end passthrough ---------------------------------------------
+
     var t = 4.f; // * itime
 
+    //var uv = vec2f(in.texCoord) / 1024; // from fragment shader
+
+    // this is from the shader but it's sus here
+    //var uv: vec2<f32> = in.fragPos.xy / 1024; // hardcode resolution to be 1024?
+    //uv -= vec2<f32>(0.5, 0.0);
+    //uv.y *= 1024 / 1024;
+
+    // FIXME
     var uv: vec2<f32> = in.fragPos.xy / 1024; // hardcode resolution to be 1024?
     uv -= vec2<f32>(0.5, 0.0);
-    uv.y *= 1024 / 1024;
 
     var accent = mix(accentColor1, accentColor2, sin(t * 15.456));
+    //var bg = vec3(0.f,0.f,0.f);
     var bg = mix(secondColor1, secondColor2, sin(t * 7.345231));
 
     var turn: f32 = (0.1) * twopi;
@@ -495,20 +513,26 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     var c: f32 = cos(turn);
     var rotX: mat3x3<f32> = mat3x3<f32>(c, 0.0, s, 0.0, 1.0, 0.0, s, 0.0, -c);
     
-    var lookAt: vec3<f32> = vec3<f32>(0.0, -1.0, 0.0);
+    //var lookAt: vec3<f32> = vec3<f32>(0.0, -1.0, 0.0);
 
     // camera setup ----------------------
 
     var cam: camera;
 
     cam.p = cameraUniforms.cameraPos.xyz;
-    cam.lookAt = -cameraUniforms.viewProj[2].xyz;
+
+    cam.lookAt = cameraUniforms.cameraLookPos.xyz;
+
     cam.forward = normalize(cam.lookAt - cam.p);
-    cam.left = cross(up, cam.forward);
+
+    cam.left = -cross(up, cam.forward);
+
     cam.up = cross(cam.forward, cam.left);
-    cam.zoom = 1.f; //cameraUniforms.xScale;
+
+    cam.zoom = 1.0f;
 
     cam.center = cam.p + cam.forward * cam.zoom;
+
     cam.i = cam.center + cam.left * uv.x + cam.up * uv.y;
 
     cam.ray.o = cam.p;                      // ray origin = camera position
@@ -518,9 +542,9 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     
     var col: vec3<f32> = render(uv, cam.ray, 0.0, bg, accent);
     
-    col = pow(col, vec3<f32>(mix(1.5, 2.6, sin(t + pi))));  // Post-processing
-    var d: f32 = 1.0 - dot(uv, uv);  // Vignette
-    col *= (d * d * d) + 0.1;
+    //col = pow(col, vec3<f32>(mix(1.5, 2.6, sin(t + pi))));  // Post-processing
+    //var d: f32 = 1.0 - dot(uv, uv);  // Vignette
+    //col *= (d * d * d) + 0.1;
     
     return vec4<f32>(col, 1.0);
 }

@@ -100,7 +100,11 @@ export class NaiveRenderer extends renderer.Renderer {
         this.jellyfishPipeline = renderer.device.createRenderPipeline({
             layout: renderer.device.createPipelineLayout({
                 label: "jellyfish pipeline layout",
-                bindGroupLayouts: [this.sceneUniformsBindGroupLayout],
+                bindGroupLayouts: [
+                    this.sceneUniformsBindGroupLayout,
+                    //renderer.modelBindGroupLayout,
+                    //renderer.materialBindGroupLayout
+                ]
             }),
             vertex: {
                 module: renderer.device.createShaderModule({

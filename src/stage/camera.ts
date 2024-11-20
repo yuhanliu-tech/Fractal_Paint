@@ -3,7 +3,7 @@ import { toRadians } from "../math_util";
 import { device, canvas, fovYDegrees, aspectRatio } from "../renderer";
 
 class CameraUniforms {
-    readonly buffer = new ArrayBuffer((16 * 3 + 4) * 5);
+    readonly buffer = new ArrayBuffer((16 * 3 + 4) * 6);
     private readonly floatView = new Float32Array(this.buffer);
 
     set viewProjMat(mat: Float32Array) {
@@ -39,6 +39,13 @@ class CameraUniforms {
         this.floatView[16 * 3 + 5] = pos[1];
         this.floatView[16 * 3 + 6] = pos[2];
         this.floatView[16 * 3 + 7] = 0;
+    }
+
+    set cameraLookPos(lookPos: Float32Array) {
+        this.floatView[16 * 3 + 8] = lookPos[0];
+        this.floatView[16 * 3 + 9] = lookPos[1];
+        this.floatView[16 * 3 + 10] = lookPos[2];
+        this.floatView[16 * 3 + 11] = 0;
     }
 }
 
@@ -167,6 +174,8 @@ export class Camera {
         this.uniforms.near = Camera.nearPlane;
         this.uniforms.logfarovernear = Math.log(Camera.farPlane / Camera.nearPlane);
         this.uniforms.cameraPos = this.cameraPos;
+
+        this.uniforms.cameraLookPos = lookPos;
 
         device.queue.writeBuffer(this.uniformsBuffer, 0, this.uniforms.buffer);
     }

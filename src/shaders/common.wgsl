@@ -25,7 +25,8 @@ struct CameraUniforms {
     yscale: f32,
     near: f32,
     logfarovernear: f32,
-    cameraPos: vec4f
+    cameraPos: vec4f,
+    cameraLookPos: vec4f
 }
 
 // CHECKITOUT: this special attenuation function ensures lights don't affect geometry outside the maximum light radius

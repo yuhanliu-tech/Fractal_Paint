@@ -28,20 +28,23 @@ export class Jellyfish {
         this.renderBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "jellyfish bind group layout",
             entries: [
-                {
+                { // camera unifs
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
+                },/*
+                { // normals
+                    binding: 1,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: { sampleType: "float" }
                 },
+                { // sampler
+                    binding: 2,
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                    sampler: {}
+                }*/
             ]
         })
-
-        /*this.renderBindGroup = renderer.device.createBindGroup({
-            layout: this.renderBindGroupLayout,
-            entries: [
-                { binding: 0, resource: sampler },
-            ]
-        });*/
 
         this.sampler = renderer.device.createSampler({
             magFilter: 'linear',
