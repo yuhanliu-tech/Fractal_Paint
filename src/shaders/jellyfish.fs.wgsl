@@ -1,4 +1,9 @@
 @group(${bindGroup_scene}) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
+
+@group(1) @binding(0) var<uniform> time: f32;
+@group(1) @binding(1) var colorTexture : texture_2d<f32>;
+@group(1) @binding(2) var depthTexture : texture_2d<f32>;
+
 //@group(${bindGroup_scene}) @binding(1) var diffuseTex: texture_2d<f32>;
 //@group(${bindGroup_scene}) @binding(2) var diffuseTexSampler: sampler;
 
@@ -490,6 +495,10 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     return vec4(finalColor, 1);
     */
     //end passthrough ---------------------------------------------
+    let index = vec2u(in.fragPos.xy);
+    let diffuseColor = textureLoad(colorTexture, index, 0);
+
+    return diffuseColor;
 
     var t = 4.f; // * itime
 
@@ -501,8 +510,8 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     //uv.y *= 1024 / 1024;
 
     // FIXME
-    var uv: vec2<f32> = in.fragPos.xy / 1024; // hardcode resolution to be 1024?
-    uv -= vec2<f32>(0.5, 0.0);
+    var uv: vec2<f32> = in.texCoord; // hardcode resolution to be 1024?
+    // uv -= vec2<f32>(0.5, 0.0);
 
     var accent = mix(accentColor1, accentColor2, sin(t * 15.456));
     //var bg = vec3(0.f,0.f,0.f);
@@ -525,7 +534,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
 
     cam.forward = normalize(cam.lookAt - cam.p);
 
-    cam.left = -cross(up, cam.forward);
+    cam.left = cross(up, cam.forward);
 
     cam.up = cross(cam.forward, cam.left);
 

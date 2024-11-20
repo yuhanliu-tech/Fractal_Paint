@@ -16,11 +16,15 @@ export class NaiveRenderer extends renderer.Renderer {
     depthTexture: GPUTexture;
     depthTextureView: GPUTextureView;
 
+    renderTexture: GPUTexture;
+    renderTextureView: GPUTextureView;
+
     pipeline: GPURenderPipeline;
 
     oceanSurfaceRenderPipeline: GPURenderPipeline;
 
     jellyfish: Jellyfish;
+    jellyfishBindGroup: GPUBindGroup;
     jellyfishPipeline: GPURenderPipeline;
     
     constructor(stage: Stage) {
@@ -54,10 +58,18 @@ export class NaiveRenderer extends renderer.Renderer {
             ]
         });
 
+        this.renderTexture = renderer.device.createTexture({
+            size: [renderer.canvas.width, renderer.canvas.height],
+            format: renderer.canvasFormat,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+        });
+
+        this.renderTextureView = this.renderTexture.createView();
+
         this.depthTexture = renderer.device.createTexture({
             size: [renderer.canvas.width, renderer.canvas.height],
             format: "depth24plus",
-            usage: GPUTextureUsage.RENDER_ATTACHMENT
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
         });
         this.depthTextureView = this.depthTexture.createView();
 
@@ -97,11 +109,31 @@ export class NaiveRenderer extends renderer.Renderer {
 
         this.jellyfish = new Jellyfish();
 
+        this.jellyfishBindGroup = renderer.device.createBindGroup({
+            label: "jellyfish textures bind group",
+            layout: this.jellyfish.bindGroupLayout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: {buffer : this.chunk.timeBuffer }
+                },
+                {
+                    binding: 1,
+                    resource: this.renderTextureView
+                },
+                {
+                    binding: 2,
+                    resource: this.depthTextureView
+                }
+            ]
+        });
+
         this.jellyfishPipeline = renderer.device.createRenderPipeline({
             layout: renderer.device.createPipelineLayout({
                 label: "jellyfish pipeline layout",
                 bindGroupLayouts: [
                     this.sceneUniformsBindGroupLayout,
+                    this.jellyfish.bindGroupLayout
                     //renderer.modelBindGroupLayout,
                     //renderer.materialBindGroupLayout
                 ]
@@ -124,11 +156,11 @@ export class NaiveRenderer extends renderer.Renderer {
                     },
                 ],
             },
-            depthStencil: {
-                depthWriteEnabled: false,
-                depthCompare: "always",
-                format: "depth24plus",
-            },
+            // depthStencil: {
+            //     depthWriteEnabled: false,
+            //     depthCompare: "always",
+            //     format: "depth24plus",
+            // },
         });
 
         this.oceanSurfaceRenderPipeline = renderer.device.createRenderPipeline({
@@ -180,7 +212,7 @@ export class NaiveRenderer extends renderer.Renderer {
             label: "naive render pass",
             colorAttachments: [
                 {
-                    view: canvasTextureView,
+                    view: this.renderTextureView,
                     clearValue: [0, 0, 0, 0],
                     loadOp: "clear",
                     storeOp: "store"
@@ -212,7 +244,7 @@ export class NaiveRenderer extends renderer.Renderer {
             label: "ocean surface render pass",
             colorAttachments: [
                 {
-                    view: canvasTextureView,
+                    view: this.renderTextureView,
                     clearValue: [0, 0, 0, 0],
                     loadOp: "clear", // load
                     storeOp: "store"
@@ -244,16 +276,17 @@ export class NaiveRenderer extends renderer.Renderer {
                     storeOp: "store",
                 },
             ],
-            depthStencilAttachment: {
-                view: this.depthTextureView,
-                depthClearValue: 1.0,
-                depthLoadOp: "clear",
-                depthStoreOp: "store",
-            },
+            // depthStencilAttachment: {
+            //     view: this.depthTextureView,
+            //     depthClearValue: 1.0,
+            //     depthLoadOp: "clear",
+            //     depthStoreOp: "store",
+            // },
         });
         
         jellyfishRenderPass.setPipeline(this.jellyfishPipeline);
         jellyfishRenderPass.setBindGroup(0, this.sceneUniformsBindGroup); // Pass uniforms
+        jellyfishRenderPass.setBindGroup(1, this.jellyfishBindGroup); // Pass textures
         jellyfishRenderPass.draw(6); // Fullscreen quad
         jellyfishRenderPass.end();
 
