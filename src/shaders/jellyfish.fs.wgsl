@@ -4,9 +4,6 @@
 @group(1) @binding(1) var colorTexture : texture_2d<f32>;
 @group(1) @binding(2) var depthTexture : texture_2d<f32>;
 
-//@group(${bindGroup_scene}) @binding(1) var diffuseTex: texture_2d<f32>;
-//@group(${bindGroup_scene}) @binding(2) var diffuseTexSampler: sampler;
-
 // reference: https://www.shadertoy.com/view/McGcWW
 
 struct FragmentInput {
@@ -26,7 +23,7 @@ const twopi: f32 = 6.283185307179586;
 const MAX_STEPS: f32 = 100.f;
 const VOLUME_STEPS: f32 =  8.f;
 const MIN_DISTANCE: f32 =  0.1;
-const MAX_DISTANCE: f32 =  100.f;
+const MAX_DISTANCE: f32 =  80.f;
 const HIT_DISTANCE: f32 =  0.01;
 
 // Colors
@@ -64,7 +61,6 @@ struct camera {
     i: vec3<f32>,       // where the current ray intersects the screen, in world coords
     ray: Ray,           // the current ray: from cam pos, through current uv projected on screen
     lookAt: vec3<f32>,  // the lookat point
-    zoom: f32,          // the zoom factor
 };
 
 struct Ray {
@@ -88,20 +84,38 @@ struct RC {
     p: vec3<f32>,  // Repeated coordinate within the cell
 };
 
-// Repeat function
-fn Repeat(pos: vec3<f32>, size: vec3<f32>) -> RC {
-    var o: RC;
-    o.h = size * 0.5;
-    o.id = floor(pos / size); // Used to give a unique id to each cell
-    o.p = pos % size - o.h;   // Use the modulus operator (%) in WGSL
-    return o;
-}
-
 // helper funcs -------------------------------------------------
+
+fn atan2(y: f32, x: f32) -> f32 {
+    if x > 0.0 {
+        // First and fourth quadrants
+        return atan(y / x);
+    } else if x < 0.0 {
+        if y >= 0.0 {
+            // Second quadrant
+            return atan(y / x) + pi; // Add π
+        } else {
+            // Third quadrant
+            return atan(y / x) - pi; // Subtract π
+        }
+    } else {
+        // x == 0.0
+        if y > 0.0 {
+            // Positive y-axis
+            return (pi/2); // π/2
+        } else if y < 0.0 {
+            // Negative y-axis
+            return -(pi/2); // -π/2
+        } else {
+            // Origin (undefined behavior)
+            return 0.0; // Default to 0.0
+        }
+    }
+}
 
 // N31 function (noise generation)
 fn N31(p: f32) -> vec3<f32> {
-    var p3: vec3<f32> = fract(vec3<f32>(p) * vec3<f32>(0.1031, 0.11369, 0.13787));
+    var p3: vec3<f32> = fract(vec3<f32>(p) * vec3<f32>(0.1031, 0.41369, 0.13787));
     p3 += dot(p3, p3.yzx + 19.19);
     return fract(vec3<f32>((p3.x + p3.y) * p3.z, (p3.x + p3.z) * p3.y, (p3.y + p3.z) * p3.x));
 }
@@ -126,7 +140,7 @@ fn sdSphere(p: vec3<f32>, pos: vec3<f32>, s: f32) -> f32 {
 // Polar modulus function (pModPolar)
 fn pModPolar(p: vec2<f32>, repetitions: f32, fix: f32) -> vec2<f32> {
     let angle: f32 = twopi / repetitions;
-    var a: f32 = atan(p.y / p.x) + angle / 2.0;
+    var a: f32 = atan2(p.y,p.x) + angle / 2.0;
     
     // Correct the quadrant manually based on the signs of x and y
     if (p.x < 0.0) {
@@ -212,6 +226,7 @@ fn remap(a: f32, b: f32, c: f32, d: f32, t: f32) -> f32 {
 // Map function
 fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
     var pNew = p;
+
     var t: f32 = time * 2.0;
     
     var N: f32 = N3(id);
@@ -236,9 +251,9 @@ fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
     o.m = 1.0;
     
     if (pNew.y < 0.5) {
-        var sway: f32 = 0.f; //sin(/*t +*/ pNew.y + N * twopi) * smoothstep(-3.0, 0.5, pNew.y) * N * 0.3;
-        pNew.x += sway * N;  // Add some sway to the tentacles
-        pNew.z += sway * (1.0 - N);
+        //var sway: f32 = sin(t + pNew.y + N * twopi) * smoothstep(-3.0, 0.5, 1.f / pNew.y) * N * 0.3;
+        //pNew.x += sway * N;  // Add some sway to the tentacles
+        //pNew.z += sway * (1.0 - N);
         
         var mp: vec3<f32> = pNew;
         let mpxz = pModPolar(mp.xz, 6.0, 0.0);
@@ -286,6 +301,15 @@ fn calcNormal(o: DE) -> vec3<f32> {
     return normalize(nor);
 }
 
+// Repeat function
+fn Repeat(pos: vec3<f32>, size: vec3<f32>) -> RC {
+    var o: RC;
+    o.h = size * 0.5;
+    o.id = floor(pos / size); // Used to give a unique id to each cell
+    o.p = pos % size - o.h;   // Use the modulus operator (%) in WGSL
+    return o;
+}
+
 // CastRay function
 fn CastRay(r: Ray) -> DE {
     var d: f32 = 0.0;
@@ -300,26 +324,39 @@ fn CastRay(r: Ray) -> DE {
     var p: vec3<f32>;
     var q: RC;
     var t: f32 = time;
-    var grid: vec3<f32> = vec3<f32>(6.0, 30.0, 6.0);
+    var grid: vec3<f32> = vec3<f32>(10.0, 50.0, 10.0);
+
+    // Initialize a variable to track the closest jellyfish
+    var closestDE: DE;
+    closestDE.d = MAX_DISTANCE; // Start with maximum distance
     
     for (var i: f32 = 0.0; i < MAX_STEPS; i+=1) {
         p = r.o + r.d * d;
+        p += 75.;
+        p.x += 25;
 
         //p.y -= t;  // Make the move up
         //p.x += t;  // Make the camera fly forward
 
+        //s = map(p, vec3(0.)); // single jelly
+
+        var skip: f32 = N3(q.id);
+        if (skip > 100) {
+            continue; // Skip certain cells based on noise
+        }
+
         q = Repeat(p, grid);
 
         // Apply step component-wise for vec3<f32>
-        var rC = vec3<f32>(0.f);
-        rC.x = ((2.0 * step(0.0, r.d.x) - 1.0) * q.h.x - q.p.x) / r.d.x;
-        rC.y = ((2.0 * step(0.0, r.d.y) - 1.0) * q.h.y - q.p.y) / r.d.y;
-        rC.z = ((2.0 * step(0.0, r.d.z) - 1.0) * q.h.z - q.p.z) / r.d.z;
+        var rCx = ((2.0 * step(0.0, r.d.x) - 1.0) * q.h.x - q.p.x) / r.d.x;
+        var rCy = ((2.0 * step(0.0, r.d.y) - 1.0) * q.h.y - q.p.y) / r.d.y;
+        var rCz = ((2.0 * step(0.0, r.d.z) - 1.0) * q.h.z - q.p.z) / r.d.z;
 
-        dC = min(min(rC.x, rC.y), rC.z) + 0.01; // Distance to cell just past boundary
+        dC = min(min(rCx, rCy), rCz) + 0.01; // Distance to cell just past boundary
 
         var N: f32 = N3(q.id);
-        q.p += (N31(N) - 0.5) * grid * vec3<f32>(0.5, 0.7, 0.5);
+        var offset: vec3<f32> = (N31(N) - 0.5) * grid * vec3<f32>(0.8, 0.8, 0.8); // Adjust multiplier for spread
+        q.p += offset; // Apply the random offset to the position
 
         if (Dist(q.p.xz, r.d.xz, vec2<f32>(0.0, 0.0)) < 1.1) {
             s = map(q.p, q.id);
@@ -327,7 +364,7 @@ fn CastRay(r: Ray) -> DE {
             s.d = dC;
         }
 
-        if (s.d < HIT_DISTANCE || d > MAX_DISTANCE) {
+        if (s.d < HIT_DISTANCE || d > MAX_DISTANCE) { 
             break;
         }
         d += min(s.d, dC); // Move to the distance to next cell or surface, whichever is closest
@@ -370,7 +407,7 @@ fn VolTex(uv: vec3<f32>, p: vec3<f32>, scale: f32, pump: f32) -> f32 {
     s = s * s;
     s *= smoothstep(-0.3, 1.4, uv.y - cos(s2 * twopi) * 0.2 + 0.3) * smoothstep(-0.6, -0.3, uv.y);
     
-    var t: f32 = time* 5.0;
+    var t: f32 = 5.0 * time;
     var mask: f32 = sin(p_scaled.x * twopi * 2.0 + t) * 0.5 + 0.5;
     s *= mask * mask * 2.0;
     
@@ -380,7 +417,7 @@ fn VolTex(uv: vec3<f32>, p: vec3<f32>, scale: f32, pump: f32) -> f32 {
 // Jelly texture function
 fn JellyTex(p: vec3<f32>) -> vec4<f32> { 
     var pNew = p;
-    var s: vec3<f32> = vec3<f32>(atan(pNew.x / pNew.z), length(pNew.xz), pNew.y);
+    var s: vec3<f32> = vec3<f32>(atan2(pNew.x,pNew.z), length(pNew.xz), pNew.y);
     
     var b: f32 = 0.75 + sin(s.x * 6.0) * 0.25;
     b = mix(1.0, b, s.y * s.y);
@@ -393,7 +430,7 @@ fn JellyTex(p: vec3<f32>) -> vec4<f32> {
 }
 
 fn background(r: vec3<f32>, bg: vec3<f32>) -> vec3<f32> {
-    var x: f32 = atan(r.x / r.z);      // From -pi to pi
+    var x: f32 = atan2(r.x,r.z);      // From -pi to pi
     var y: f32 = pi * 0.5 - acos(r.y);  // From -1/2pi to 1/2pi
     
     var col: vec3<f32> = bg * (1.0 + y);
@@ -417,7 +454,7 @@ fn background(r: vec3<f32>, bg: vec3<f32>) -> vec3<f32> {
 fn render(uv: vec2<f32>, camRay: Ray, depth: f32, bg: vec3<f32>, accent: vec3<f32>) -> vec3<f32> {
     // Outputs a color
 
-    var col: vec3<f32> = background(camRay.d, bg);
+    var col: vec3<f32> = mix(background(camRay.d, bg), vec3(0.f,1.f,1.f), 0.5);
     var o: DE = CastRay(camRay);
     
     var t: f32 = time;
@@ -439,7 +476,7 @@ fn render(uv: vec2<f32>, camRay: Ray, depth: f32, bg: vec3<f32>, accent: vec3<f3
                 if (sd != MAX_DISTANCE) {
                     var intersect: vec2<f32> = o.uv.xz + camRay.d.xz * sd;
 
-                    var uv: vec3<f32> = vec3<f32>(atan(intersect.x / intersect.y), length(intersect.xy), o.uv.z);
+                    var uv: vec3<f32> = vec3<f32>(atan2(intersect.x,intersect.y), length(intersect.xy), o.uv.z);
                     density += VolTex(o.uv, uv, 1.4 + i * 0.03, o.pump);
                 }
             }
@@ -491,7 +528,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     let index = vec2u(in.fragPos.xy);
     let diffuseColor = textureLoad(colorTexture, index, 0);
 
-    var t = 4.f ;//* time;
+    var t = 0.4f * time;
 
     var uv: vec2<f32> = in.texCoord;
     uv -= 0.5;
@@ -499,7 +536,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     // background and jelly colors
     var accent = mix(accentColor1, accentColor2, sin(t * 15.456));
     var bg = diffuseColor.xyz;
-    bg = mix(secondColor1, secondColor2, sin(t*7.345231));
+    //bg = mix(secondColor1, secondColor2, sin(7.345231));
 
     // camera setup ----------------------
 
@@ -507,13 +544,13 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
 
     cam.lookAt = cameraUniforms.cameraLookPos.xyz;
 
-    cam.p = cameraUniforms.cameraPos.xyz ;
+    cam.p = cameraUniforms.cameraPos.xyz;
 
     cam.forward = normalize(cam.lookAt - cam.p);
 
-    cam.left = -cross(up, cam.forward);
+    cam.left = -normalize(cross(up, cam.forward));
 
-    cam.up = -cross(cam.forward, cam.left);
+    cam.up = -normalize(cross(cam.forward, cam.left));
 
     cam.center = cam.p + cam.forward;
 
@@ -530,5 +567,8 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     //var d: f32 = 1.0 - dot(uv, uv);  // Vignette
     //col *= (d * d * d) + 0.1;
     
+    if (cam.p.y >= 40.f) { // FIXME: don't hardcode this
+        return vec4<f32>(bg, 1.0); // don't make jellies if camera is above ocean surface
+    }
     return vec4<f32>(col, 1.0);
 }
