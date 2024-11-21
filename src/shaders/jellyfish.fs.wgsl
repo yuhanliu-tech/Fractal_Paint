@@ -212,19 +212,19 @@ fn remap(a: f32, b: f32, c: f32, d: f32, t: f32) -> f32 {
 // Map function
 fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
     var pNew = p;
-    //var t: f32 = iTime * 2.0;
+    var t: f32 = time * 2.0;
     
     var N: f32 = N3(id);
     
     var o: DE;
     o.m = 0.0;
     
-    var x: f32 = (pNew.y + N * twopi) * 1.0;// + t;
+    var x: f32 = (pNew.y + N * twopi) * 1.0 + t;
     var r: f32 = 1.0;
     
     var pump: f32 = cos(x + cos(x)) + sin(2.0 * x) * 0.2 + sin(4.0 * x) * 0.02;
     
-    x = /*t +*/ N * twopi;
+    x = t + N * twopi;
     pNew.y -= (cos(x + cos(x)) + sin(2.0 * x) * 0.2) * 0.6;
     pNew.x *= 1.0 + pump * 0.2;
     pNew.z *= 1.0 + pump * 0.2;
@@ -299,7 +299,7 @@ fn CastRay(r: Ray) -> DE {
     var dC: f32 = MAX_DISTANCE;
     var p: vec3<f32>;
     var q: RC;
-    //var t: f32 = iTime;
+    var t: f32 = time;
     var grid: vec3<f32> = vec3<f32>(6.0, 30.0, 6.0);
     
     for (var i: f32 = 0.0; i < MAX_STEPS; i+=1) {
@@ -370,7 +370,7 @@ fn VolTex(uv: vec3<f32>, p: vec3<f32>, scale: f32, pump: f32) -> f32 {
     s = s * s;
     s *= smoothstep(-0.3, 1.4, uv.y - cos(s2 * twopi) * 0.2 + 0.3) * smoothstep(-0.6, -0.3, uv.y);
     
-    var t: f32 = /*iTime **/ 5.0;
+    var t: f32 = time* 5.0;
     var mask: f32 = sin(p_scaled.x * twopi * 2.0 + t) * 0.5 + 0.5;
     s *= mask * mask * 2.0;
     
@@ -398,7 +398,7 @@ fn background(r: vec3<f32>, bg: vec3<f32>) -> vec3<f32> {
     
     var col: vec3<f32> = bg * (1.0 + y);
     
-    //var t: f32 = iTime;  // Add god rays
+    var t: f32 = time;  // Add god rays
     
     var a: f32 = sin(r.x);
     
@@ -420,7 +420,7 @@ fn render(uv: vec2<f32>, camRay: Ray, depth: f32, bg: vec3<f32>, accent: vec3<f3
     var col: vec3<f32> = background(camRay.d, bg);
     var o: DE = CastRay(camRay);
     
-    //var t: f32 = iTime;
+    var t: f32 = time;
     var L: vec3<f32> = up;
 
     if (o.m > 0.0) {
@@ -488,59 +488,34 @@ fn render(uv: vec2<f32>, camRay: Ray, depth: f32, bg: vec3<f32>, accent: vec3<f3
 @fragment
 fn main(in: FragmentInput) -> @location(0) vec4f {
 
-    // try to get passthrough -------------------------------------
-    /*
-    let diffuseColor = textureSample(diffuseTex, diffuseTexSampler, in.texCoord);
-    var finalColor = diffuseColor.rgb;
-    return vec4(finalColor, 1);
-    */
-    //end passthrough ---------------------------------------------
     let index = vec2u(in.fragPos.xy);
     let diffuseColor = textureLoad(colorTexture, index, 0);
 
-    return diffuseColor;
+    var t = 4.f ;//* time;
 
-    var t = 4.f; // * itime
+    var uv: vec2<f32> = in.texCoord;
+    uv -= 0.5;
 
-    //var uv = vec2f(in.texCoord) / 1024; // from fragment shader
-
-    // this is from the shader but it's sus here
-    //var uv: vec2<f32> = in.fragPos.xy / 1024; // hardcode resolution to be 1024?
-    //uv -= vec2<f32>(0.5, 0.0);
-    //uv.y *= 1024 / 1024;
-
-    // FIXME
-    var uv: vec2<f32> = in.texCoord; // hardcode resolution to be 1024?
-    // uv -= vec2<f32>(0.5, 0.0);
-
+    // background and jelly colors
     var accent = mix(accentColor1, accentColor2, sin(t * 15.456));
-    //var bg = vec3(0.f,0.f,0.f);
-    var bg = mix(secondColor1, secondColor2, sin(t * 7.345231));
-
-    var turn: f32 = (0.1) * twopi;
-    var s: f32 = sin(turn);
-    var c: f32 = cos(turn);
-    var rotX: mat3x3<f32> = mat3x3<f32>(c, 0.0, s, 0.0, 1.0, 0.0, s, 0.0, -c);
-    
-    //var lookAt: vec3<f32> = vec3<f32>(0.0, -1.0, 0.0);
+    var bg = diffuseColor.xyz;
+    bg = mix(secondColor1, secondColor2, sin(t*7.345231));
 
     // camera setup ----------------------
 
     var cam: camera;
 
-    cam.p = cameraUniforms.cameraPos.xyz;
-
     cam.lookAt = cameraUniforms.cameraLookPos.xyz;
+
+    cam.p = cameraUniforms.cameraPos.xyz ;
 
     cam.forward = normalize(cam.lookAt - cam.p);
 
-    cam.left = cross(up, cam.forward);
+    cam.left = -cross(up, cam.forward);
 
-    cam.up = cross(cam.forward, cam.left);
+    cam.up = -cross(cam.forward, cam.left);
 
-    cam.zoom = 1.0f;
-
-    cam.center = cam.p + cam.forward * cam.zoom;
+    cam.center = cam.p + cam.forward;
 
     cam.i = cam.center + cam.left * uv.x + cam.up * uv.y;
 
