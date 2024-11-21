@@ -332,8 +332,7 @@ fn CastRay(r: Ray) -> DE {
     
     for (var i: f32 = 0.0; i < MAX_STEPS; i+=1) {
         p = r.o + r.d * d;
-        p += 75.;
-        p.x += 25;
+        p += 1025.;
 
         //p.y -= t;  // Make the move up
         //p.x += t;  // Make the camera fly forward
