@@ -11,6 +11,9 @@ const u_g = f32(9.81);
 const PI = 3.14159265358979323846264; // Life of π
 const l = 100.0;
 
+const HEX_SIZE = 15.f; // size of hexagonal tiles
+const SQRT3 = 1.73205080757;
+
 fn random2(p: vec2<f32>) -> vec2<f32> {
     return fract(sin(vec2(dot(p, vec2(127.1f, 311.7f)),
                  dot(p, vec2(269.5f,183.3f))))
@@ -105,21 +108,22 @@ fn normal(pos: vec2<f32>, e: f32, depth: f32, wave_amplitude: f32) -> vec3<f32> 
     );
 }
 
-fn blugausnoise(c1: vec2<f32>) -> f32 {
+// Sample from an exemplar texture with a random offset
+fn exemplar_sample(pos: vec2<f32>, tile_idx: vec2<f32>) -> f32 {
+    let offset = HEX_SIZE; // Add randomness per tile
+    return getwaves(pos + offset, 38); // Reuse getwaves function for content
+}
 
-    let cx = vec3<f32>(c1.x + vec3<f32>(-1,0,1));
-    let f0 = fract(vec4<f32>(cx * 9.1031, c1.y * 8.1030));
-    let f1 = fract(vec4<f32>(cx * 7.0973, c1.y * 6.0970));
-	let t0 = vec4<f32>(f0.xw, f1.xw);
-	let t1 = vec4<f32>(f0.yw, f1.yw);
-	let t2 = vec4<f32>(f0.zw, f1.zw);
-    let p0 = vec4<f32>(t0 + dot(t0, t0.wzxy + 19.19));
-    let p1 = vec4<f32>(t1 + dot(t1, t1.wzxy + 19.19));
-    let p2 = vec4<f32>(t2 + dot(t2, t2.wzxy + 19.19));
-	let n0 = fract(vec4<f32>(p0.zywx * (p0.xxyz + p0.yzzw)));
-	let n1 = fract(vec4<f32>(p1.zywx* (p1.xxyz+ p1.yzzw)));
-	let n2 = fract(vec4<f32>(p2.zywx* (p2.xxyz+ p2.yzzw)));
-    return dot(0.5 * n1 - 0.125 * (n0 + n2), vec4<f32>(1));
+// Compute the center of a hexagon given grid coordinates
+fn hexCenter(gridCoords: vec2<f32>) -> vec2<f32> {
+    let x = gridCoords.x * 1.5 * HEX_SIZE;
+    let y = gridCoords.y * SQRT3 * HEX_SIZE + (gridCoords.x % 2.0) * SQRT3 * HEX_SIZE * 0.5;
+    return vec2(x, y);
+}
+
+fn calcCenter(offset: vec2<f32>, position: vec2<f32>) -> vec2<f32> {
+    let gridIndex = floor(vec2((position.x + offset.x) / (1.5 * HEX_SIZE), (position.y + offset.y) / (SQRT3 * HEX_SIZE)));
+    return hexCenter(gridIndex);
 }
 
 @compute
@@ -132,17 +136,58 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let iterations = 38;
     let depth = 1.f;
 
-    // Calculate the wave phase
+    // Tessendorf approx with perlin blend ----------------------
     var position = vec2f(x, y) + world_position;
     let wave_amplitude = 0.5 * perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
+    var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude; 
 
-    var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude;
+    // hexagonal tiling & blending: redTexture(x) * bary(p1) + greenTexture(x) * bary(p2) + blueTexture(x) * bary(p3)
+    // ---------------------------------------------------------
 
-    textureStore(displacementMap, globalIdx.xy, vec4(wave_height, 0, 0, 1));
+    // overlapped triangle vertices
+    let a = calcCenter(vec2(0.f,0.f), position);
+    let b = calcCenter(vec2( HEX_SIZE / 2.f ,  -HEX_SIZE * SQRT3 / 2.f), position);
+    let c = calcCenter(vec2( -HEX_SIZE / 2.f ,  -HEX_SIZE * SQRT3 / 2.f), position);
 
-    let normal = normal(position, 0.01, depth, wave_amplitude);
-    
+    // Barycentric computation-----------------------------
+
+    // Compute the areas of the sub-triangles
+    let areaABC = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+    let areaPBC = (b.x - position.x) * (c.y - position.y) - (c.x - position.x) * (b.y - position.y);
+    let areaPCA = (c.x - position.x) * (a.y - position.y) - (a.x - position.x) * (c.y - position.y);
+    let areaPAB = (a.x - position.x) * (b.y - position.y) - (b.x - position.x) * (a.y - position.y);
+
+
+    // Compute the barycentric weights
+    var w1 = abs(areaPBC / areaABC);
+    var w2 = abs(areaPCA / areaABC);
+    var w3 = abs(areaPAB / areaABC);
+
+    // Compute the sum of squared weights
+    let weight_norm = sqrt(w1 * w1 + w2 * w2 + w3 * w3);
+
+    // Normalize the weights
+    w1 /= weight_norm;
+    w2 /= weight_norm;
+    w3 /= weight_norm;
+
+    // Assume exemplar_mean is precomputed or estimated
+    //let exemplar_mean = /* compute or estimate the mean of the exemplar */;
+
+    // Subtract mean from each sample
+    let sample0 = exemplar_sample(position, a);// - exemplar_mean;
+    let sample1 = exemplar_sample(position, b * 2);// - exemplar_mean;
+    let sample2 = exemplar_sample(position, c * 3);// - exemplar_mean;
+
+    // Compute the blended value
+    var final_wave_height = sample0 * w1 + sample1 * w2 + sample2 * w3;
+    // Add the mean back
+    //final_wave_height += exemplar_mean;
+
+    textureStore(displacementMap, globalIdx.xy, vec4(final_wave_height, 0, 0, 1));
+
     // Store the computed normal in the normal map
+    let normal = normal(position, 0.01, depth, wave_amplitude);
     textureStore(normalMap, globalIdx.xy, vec4f(normal + 0.5, 1.0));  // Map from [-1, 1] to [0, 1]
 
 }
