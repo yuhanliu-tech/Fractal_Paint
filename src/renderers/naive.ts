@@ -19,13 +19,19 @@ export class NaiveRenderer extends renderer.Renderer {
     sceneUniformsBindGroupLayout: GPUBindGroupLayout;
     sceneUniformsBindGroup: GPUBindGroup;
 
+    albedoTexture: GPUTexture;
+    albedoTextureView: GPUTextureView;
+    distanceTexture: GPUTexture;
+    distanceTextureView: GPUTextureView;
     depthTexture: GPUTexture;
     depthTextureView: GPUTextureView;
 
-    pipeline: GPURenderPipeline;
-
     oceanSurfaceRenderPipeline: GPURenderPipeline;
     oceanFloorRenderPipeline: GPURenderPipeline;
+
+    fullScreenBindGroupLayout: GPUBindGroupLayout;
+    fullScreenBindGroup: GPUBindGroup;
+    fullScreenPipeline: GPURenderPipeline;
 
     constructor(stage: Stage) {
         super(stage);
@@ -65,46 +71,26 @@ export class NaiveRenderer extends renderer.Renderer {
             ]
         });
 
+        this.albedoTexture = renderer.device.createTexture({
+            size: [renderer.canvas.width, renderer.canvas.height],
+            format: renderer.canvasFormat,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+        });
+        this.albedoTextureView = this.albedoTexture.createView();
+
+        this.distanceTexture = renderer.device.createTexture({
+            size: [renderer.canvas.width, renderer.canvas.height],
+            format: "rgba16float",
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+        })
+        this.distanceTextureView = this.distanceTexture.createView();
+
         this.depthTexture = renderer.device.createTexture({
             size: [renderer.canvas.width, renderer.canvas.height],
             format: "depth24plus",
             usage: GPUTextureUsage.RENDER_ATTACHMENT
         });
         this.depthTextureView = this.depthTexture.createView();
-
-        this.pipeline = renderer.device.createRenderPipeline({
-            layout: renderer.device.createPipelineLayout({
-                label: "naive pipeline layout",
-                bindGroupLayouts: [
-                    this.sceneUniformsBindGroupLayout,
-                    renderer.modelBindGroupLayout,
-                    renderer.materialBindGroupLayout
-                ]
-            }),
-            depthStencil: {
-                depthWriteEnabled: true,
-                depthCompare: "less",
-                format: "depth24plus"
-            },
-            vertex: {
-                module: renderer.device.createShaderModule({
-                    label: "naive vert shader",
-                    code: shaders.naiveVertSrc
-                }),
-                buffers: [renderer.vertexBufferLayout]
-            },
-            fragment: {
-                module: renderer.device.createShaderModule({
-                    label: "naive frag shader",
-                    code: shaders.naiveFragSrc,
-                }),
-                targets: [
-                    {
-                        format: renderer.canvasFormat,
-                    }
-                ]
-            }
-        });
 
         this.oceanSurfaceRenderPipeline = renderer.device.createRenderPipeline({
             layout: renderer.device.createPipelineLayout({
@@ -132,8 +118,12 @@ export class NaiveRenderer extends renderer.Renderer {
                     code: shaders.oceanSurfaceFragSrc,
                 }),
                 targets: [
-                    {
+                    {   // albedo
                         format: renderer.canvasFormat,
+                    },
+                    {
+                        //distance
+                        format: "rgba16float"
                     }
                 ]
             }
@@ -165,12 +155,84 @@ export class NaiveRenderer extends renderer.Renderer {
                     code: shaders.oceanFloorFragSrc,
                 }),
                 targets: [
+                    {   // albedo
+                        format: renderer.canvasFormat,
+                    },
+                    {
+                        //distance
+                        format: "rgba16float"
+                    }
+                ]
+            }
+        })
+
+        this.fullScreenBindGroupLayout = renderer.device.createBindGroupLayout({
+            entries: [
+                {   // albedo
+                    binding: 0,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: { sampleType: "unfilterable-float" }
+                },
+                {   // distance
+                    binding: 1,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: { sampleType: "unfilterable-float" }
+                },
+                {
+                    // depth
+                    binding: 2,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: { sampleType: "depth" }
+                }
+            ]
+        });
+
+        this.fullScreenBindGroup = renderer.device.createBindGroup({
+            layout: this.fullScreenBindGroupLayout,
+            entries: [
+                {   // albedo
+                    binding: 0,
+                    resource: this.albedoTextureView
+                },
+                {   // distance
+                    binding: 1,
+                    resource: this.distanceTextureView
+                },
+                {   // depth
+                    binding: 2,
+                    resource: this.depthTextureView
+                }
+            ]
+        });
+
+        this.fullScreenPipeline = renderer.device.createRenderPipeline({
+            label: "deferred fullscreen render pipeline",
+            layout: renderer.device.createPipelineLayout({
+                label: "fullscreen deferred pipeline layout",
+                bindGroupLayouts: [
+                    this.sceneUniformsBindGroupLayout,
+                    this.fullScreenBindGroupLayout
+                ]
+            }),
+            vertex: {
+                module: renderer.device.createShaderModule({
+                    label: "post process vert shader",
+                    code: shaders.postProcessVertSrc
+                }),
+                buffers: []
+            },
+            fragment: {
+                module: renderer.device.createShaderModule({
+                    label: "post process frag shader",
+                    code: shaders.postProcessFragSrc,
+                }),
+                targets: [
                     {
                         format: renderer.canvasFormat,
                     }
                 ]
             }
-        })
+        });
     }
 
     override draw() {
@@ -185,13 +247,18 @@ export class NaiveRenderer extends renderer.Renderer {
         const encoder = renderer.device.createCommandEncoder();
         this.oceanSurface.computeTextures(encoder, this.chunk);
         this.oceanFloor.computeTextures(encoder, this.oceanFloorChunk);
-        const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
-        /*const renderPass = encoder.beginRenderPass({
-            label: "naive render pass",
+        const oceanSurfaceRenderPass = encoder.beginRenderPass({
+            label: "ocean surface render pass",
             colorAttachments: [
                 {
-                    view: canvasTextureView,
+                    view: this.albedoTextureView,
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "clear",
+                    storeOp: "store"
+                },
+                {
+                    view: this.distanceTextureView,
                     clearValue: [0, 0, 0, 0],
                     loadOp: "clear",
                     storeOp: "store"
@@ -200,76 +267,67 @@ export class NaiveRenderer extends renderer.Renderer {
             depthStencilAttachment: {
                 view: this.depthTextureView,
                 depthClearValue: 1.0,
-                depthLoadOp: "clear",
-                depthStoreOp: "store"
-            }
-        });
-        renderPass.setPipeline(this.pipeline);
-
-        renderPass.setBindGroup(shaders.constants.bindGroup_scene, this.sceneUniformsBindGroup);
-        this.scene.iterate(node => {
-            renderPass.setBindGroup(shaders.constants.bindGroup_model, node.modelBindGroup);
-        }, material => {
-            renderPass.setBindGroup(shaders.constants.bindGroup_material, material.materialBindGroup);
-        }, primitive => {
-            renderPass.setVertexBuffer(0, primitive.vertexBuffer);
-            renderPass.setIndexBuffer(primitive.indexBuffer, 'uint32');
-            renderPass.drawIndexed(primitive.numIndices);
-        });
-
-        renderPass.end();*/
-
-        const oceanSurfaceRenderPass = encoder.beginRenderPass({
-            label: "ocean surface render pass",
-            colorAttachments: [
-                {
-                    view: canvasTextureView,
-                    clearValue: [0, 0, 0, 0],
-                    loadOp: "clear", // load
-                    storeOp: "store"
-                },
-            ],
-            depthStencilAttachment: {
-                view: this.depthTextureView,
-                depthClearValue: 1.0,
                 depthLoadOp: "clear", // load 
                 depthStoreOp: "store"
             }
         });
-        oceanSurfaceRenderPass.setPipeline(this.oceanSurfaceRenderPipeline);
-        oceanSurfaceRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
-        oceanSurfaceRenderPass.setBindGroup(1, this.chunk.renderBindGroup);
+        // oceanSurfaceRenderPass.setPipeline(this.oceanSurfaceRenderPipeline);
+        // oceanSurfaceRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
+        // oceanSurfaceRenderPass.setBindGroup(1, this.chunk.renderBindGroup);
 
-        oceanSurfaceRenderPass.setVertexBuffer(0, this.oceanSurface.vertexBuffer);
-        oceanSurfaceRenderPass.setIndexBuffer(this.oceanSurface.indexBuffer, 'uint32');
-        oceanSurfaceRenderPass.drawIndexed(this.oceanSurface.numIndices);
+        // oceanSurfaceRenderPass.setVertexBuffer(0, this.oceanSurface.vertexBuffer);
+        // oceanSurfaceRenderPass.setIndexBuffer(this.oceanSurface.indexBuffer, 'uint32');
+        // oceanSurfaceRenderPass.drawIndexed(this.oceanSurface.numIndices);
         oceanSurfaceRenderPass.end();
 
-        const oceanFloorRenderPass = encoder.beginRenderPass({
-            label: "ocean floor render pass",
-            colorAttachments: [
-                {
-                    view: canvasTextureView,
-                    clearValue: [0, 0, 0, 0],
-                    loadOp: "load",
-                    storeOp: "store"
-                },
-            ],
-            depthStencilAttachment: {
-                view: this.depthTextureView,
-                depthClearValue: 1.0,
-                depthLoadOp: "load",
-                depthStoreOp: "store"
-            }
-        });
-        oceanFloorRenderPass.setPipeline(this.oceanFloorRenderPipeline);
-        oceanFloorRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
-        oceanFloorRenderPass.setBindGroup(1, this.oceanFloorChunk.renderBindGroup);
+        // const oceanFloorRenderPass = encoder.beginRenderPass({
+        //     label: "ocean floor render pass",
+        //     colorAttachments: [
+        //         {
+        //             view: this.albedoTextureView,
+        //             loadOp: "load",
+        //             storeOp: "store"
+        //         },
+        //         {
+        //             view: this.distanceTextureView,
+        //             loadOp: "load",
+        //             storeOp: "store"
+        //         }
+        //     ],
+        //     depthStencilAttachment: {
+        //         view: this.depthTextureView,
+        //         depthClearValue: 1.0,
+        //         depthLoadOp: "load",
+        //         depthStoreOp: "store"
+        //     }
+        // });
+        // oceanFloorRenderPass.setPipeline(this.oceanFloorRenderPipeline);
+        // oceanFloorRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
+        // oceanFloorRenderPass.setBindGroup(1, this.oceanFloorChunk.renderBindGroup);
 
-        oceanFloorRenderPass.setVertexBuffer(0, this.oceanFloor.vertexBuffer);
-        oceanFloorRenderPass.setIndexBuffer(this.oceanFloor.indexBuffer, 'uint32');
-        oceanFloorRenderPass.drawIndexed(this.oceanFloor.numIndices);
-        oceanFloorRenderPass.end();
+        // oceanFloorRenderPass.setVertexBuffer(0, this.oceanFloor.vertexBuffer);
+        // oceanFloorRenderPass.setIndexBuffer(this.oceanFloor.indexBuffer, 'uint32');
+        // oceanFloorRenderPass.drawIndexed(this.oceanFloor.numIndices);
+        // oceanFloorRenderPass.end();
+
+        // const canvasTextureView = renderer.context.getCurrentTexture().createView();
+        // const fullScreenPass = encoder.beginRenderPass({
+        //     label: "post process render pass",
+        //     colorAttachments: [
+        //         {
+        //             view: canvasTextureView,
+        //             clearValue: [0, 0, 0, 0],
+        //             loadOp: "clear",
+        //             storeOp: "store"
+        //         }
+        //     ]
+        // });
+        // fullScreenPass.setPipeline(this.fullScreenPipeline);
+        // fullScreenPass.setBindGroup(shaders.constants.bindGroup_scene, this.sceneUniformsBindGroup)
+        // fullScreenPass.setBindGroup(shaders.constants.bindGroup_fullscreen, this.fullScreenBindGroup);
+        // fullScreenPass.draw(6);
+
+        // fullScreenPass.end();
 
         renderer.device.queue.submit([encoder.finish()]);
     }

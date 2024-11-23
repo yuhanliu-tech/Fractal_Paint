@@ -10,6 +10,11 @@ struct FragmentInput
     @location(2) worldPosition: vec2f,
 }
 
+struct GBufferOutput {
+    @location(0) albedo : vec4f,
+    @location(1) distance : vec4f
+}
+
 fn getSunDirection() -> vec3<f32> {
   return normalize(vec3(-0.2 , 0.6 + sin(20) * 0.15 , 1.0));
 }
@@ -68,7 +73,7 @@ const fogDistance: f32 = 550.0;
 const fogColor: vec3f = vec3<f32>(0.0, 0.0, 0.0); // background (and thus fog) is currently black
 
 @fragment
-fn main(in: FragmentInput) -> @location(0) vec4f
+fn main(in: FragmentInput) -> GBufferOutput
 {
     // not cursed texture sampling for ocean color :)
     let uv = vec2f(in.texCoord) / 1024;
@@ -100,5 +105,5 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     let color = mix(oceanColor + C * 0.18, fogColor, fogFactor);
 
     // combine lighting results
-    return vec4f(color, 1.0);
+    return GBufferOutput(vec4f(color, 1.0), normal);
 }

@@ -21,6 +21,9 @@ import oceanFloorVertRaw from './ocean_floor.vs.wgsl?raw';
 import oceanFloorFragRaw from './ocean_floor.fs.wgsl?raw';
 import oceanFloorComputeRaw from './ocean_floor.cs.wgsl?raw';
 
+import postProcessVertRaw from './post_process.vs.wgsl?raw';
+import postProcessFragRaw from './post_process.fs.wgsl?raw';
+
 // CONSTANTS (for use in shaders)
 // =================================
 
@@ -74,3 +77,6 @@ export const oceanSurfaceComputeSrc: string = processShaderRaw(oceanSurfaceCompu
 export const oceanFloorVertSrc: string = processShaderRaw(oceanFloorVertRaw);
 export const oceanFloorFragSrc: string = processShaderRaw(oceanFloorFragRaw);
 export const oceanFloorComputeSrc: string = processShaderRaw(oceanFloorComputeRaw);
+
+export const postProcessVertSrc: string = processShaderRaw(postProcessVertRaw);
+export const postProcessFragSrc: string = processShaderRaw(postProcessFragRaw);
