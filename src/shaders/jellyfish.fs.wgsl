@@ -2,7 +2,8 @@
 
 @group(1) @binding(0) var<uniform> time: f32;
 @group(1) @binding(1) var colorTexture : texture_2d<f32>;
-@group(1) @binding(2) var depthTexture : texture_2d<f32>;
+@group(1) @binding(2) var depthTexture : texture_2d<f32>; // we don't need this?
+@group(1) @binding(3) var<uniform> world_position: vec2f;
 
 // reference: https://www.shadertoy.com/view/McGcWW
 
@@ -12,26 +13,25 @@ struct FragmentInput {
 };
 
 // Constants
-const lf: vec3<f32> = vec3<f32>(1.0, 0.0, 0.0);
-const up: vec3<f32> = vec3<f32>(0.0, 1.0, 0.0);
-const fw: vec3<f32> = vec3<f32>(0.0, 0.0, 1.0);
+const lf: vec3<f32> = vec3<f32>(1.0, 0.0, 0.0); // left
+const up: vec3<f32> = vec3<f32>(0.0, 1.0, 0.0); // up
+const fw: vec3<f32> = vec3<f32>(0.0, 0.0, 1.0); // forward
 
 const halfpi: f32 = 1.570796326794896619;
 const pi: f32 = 3.141592653589793238;
 const twopi: f32 = 6.283185307179586;
 
-const MAX_STEPS: f32 = 100.f;
+// parameters to control ray marching 
+const MAX_STEPS: f32 = 150.f;
 const VOLUME_STEPS: f32 =  8.f;
-const MIN_DISTANCE: f32 =  0.1;
+const MIN_DISTANCE: f32 =  0.05;
 const MAX_DISTANCE: f32 =  80.f;
 const HIT_DISTANCE: f32 =  0.01;
 
 // Colors
 const accentColor1: vec3<f32> = vec3<f32>(1.0, 0.1, 0.5);
-const secondColor1: vec3<f32> = vec3<f32>(0.1, 0.5, 1.0);
-
 const accentColor2: vec3<f32> = vec3<f32>(1.0, 0.5, 0.1);
-const secondColor2: vec3<f32> = vec3<f32>(0.1, 0.5, 0.6);
+const baseColor: vec3<f32> = vec3<f32>(0.8, 0.5, 0.5);
 
 // Noise Functions
 fn N1(x: f32) -> f32 {
@@ -51,33 +51,23 @@ fn N3(p: vec3<f32>) -> f32 {
 
 // Structs
 
-// Struct definition for camera
-struct camera {
-    p: vec3<f32>,       // the position of the camera
-    forward: vec3<f32>, // the camera forward vector
-    left: vec3<f32>,    // the camera left vector
-    up: vec3<f32>,      // the camera up vector
-    center: vec3<f32>,  // the center of the screen, in world coords
-    i: vec3<f32>,       // where the current ray intersects the screen, in world coords
-    ray: Ray,           // the current ray: from cam pos, through current uv projected on screen
-    lookAt: vec3<f32>,  // the lookat point
-};
-
 struct Ray {
     o: vec3<f32>, // Origin of the ray
     d: vec3<f32>, // Direction of the ray
 };
 
+// Distance estimation (stores info about distance to nearest surface)
 struct DE {
     d: f32,      // Final distance to the field
     m: f32,      // Material type
-    uv: vec3<f32>, // Texture coordinates (or any other UV-like data)
-    pump: f32,   // A scalar value for "pump" (could represent some state or effect)
+    uv: vec3<f32>,
+    pump: f32,  
 
-    id: vec3<f32>, // Object ID or a unique identifier
+    id: vec3<f32>,
     pos: vec3<f32>, // World-space position of the fragment
 };
 
+// repeated cell (for jellyfish pattern)
 struct RC {
     id: vec3<f32>, // Floor'd coordinate of the cell, used to identify the cell
     h: vec3<f32>,  // Half size of the cell
@@ -138,6 +128,7 @@ fn sdSphere(p: vec3<f32>, pos: vec3<f32>, s: f32) -> f32 {
 }
 
 // Polar modulus function (pModPolar)
+// creates polar symmetry by repeating space in angular segments 
 fn pModPolar(p: vec2<f32>, repetitions: f32, fix: f32) -> vec2<f32> {
     let angle: f32 = twopi / repetitions;
     var a: f32 = atan2(p.y,p.x) + angle / 2.0;
@@ -218,12 +209,36 @@ fn sph(ro: vec3<f32>, rd: vec3<f32>, pos: vec3<f32>, radius: f32) -> vec2<f32> {
     return vec2<f32>(a, b);
 }
 
+// calculates normal vector at a point on the surface 
+fn calcNormal(o: DE) -> vec3<f32> {
+    var eps: vec3<f32> = vec3<f32>(0.01, 0.0, 0.0);
+    var nor: vec3<f32> = vec3<f32>(
+        map(o.pos + eps.xyy, o.id).d - map(o.pos - eps.xyy, o.id).d,
+        map(o.pos + eps.yxy, o.id).d - map(o.pos - eps.yxy, o.id).d,
+        map(o.pos + eps.yyx, o.id).d - map(o.pos - eps.yyx, o.id).d
+    );
+    return normalize(nor);
+}
+
+// Repeat function
+// creates grid of repeated cells to place multiple jellyfish into the scene
+fn Repeat(pos: vec3<f32>, size: vec3<f32>) -> RC {
+    var o: RC;
+    o.h = size * 0.5;
+    o.id = floor(pos / size); // Used to give a unique id to each cell
+    o.p = pos % size - o.h;  
+    return o;
+}
+
 // Remap function
 fn remap(a: f32, b: f32, c: f32, d: f32, t: f32) -> f32 {
     return ((t - a) / (b - a)) * (d - c) + c;
 }
 
+//============================================================================================
+
 // Map function
+// Defines distance to nearest surface at any given point (calculates signed dist)
 fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
     var pNew = p;
 
@@ -234,45 +249,60 @@ fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
     var o: DE;
     o.m = 0.0;
     
+    // var x used for animating and shaping jellyfish head
     var x: f32 = (pNew.y + N * twopi) * 1.0 + t;
-    var r: f32 = 1.0;
+    var r: f32 = 1.0; // radius of jelly head
     
-    var pump: f32 = cos(x + cos(x)) + sin(2.0 * x) * 0.2 + sin(4.0 * x) * 0.02;
+    var pump: f32 = cos(x + cos(x)) + sin(2.0 * x) * 0.2 + sin(4.0 * x) * 0.02; // animation
     
+    // jellyfish animation
     x = t + N * twopi;
     pNew.y -= (cos(x + cos(x)) + sin(2.0 * x) * 0.2) * 0.6;
     pNew.x *= 1.0 + pump * 0.2;
     pNew.z *= 1.0 + pump * 0.2;
     
+    // signed dist to jellyfish head
     var d1: f32 = sdSphere(pNew, vec3<f32>(0.0, 0.0, 0.0), r);
+
+    // signed dist to hollow out jellyfish head
     var d2: f32 = sdSphere(pNew, vec3<f32>(0.0, -0.5, 0.0), r);
     
+    // combine dists to create head shape 
     o.d = smax(d1, -d2, 0.1);
     o.m = 1.0;
     
+    // if point is below a certain height, add tentacles
     if (pNew.y < 0.5) {
         //var sway: f32 = sin(t + pNew.y + N * twopi) * smoothstep(-3.0, 0.5, 1.f / pNew.y) * N * 0.3;
         //pNew.x += sway * N;  // Add some sway to the tentacles
         //pNew.z += sway * (1.0 - N);
         
         var mp: vec3<f32> = pNew;
-        let mpxz = pModPolar(mp.xz, 6.0, 0.0);
+
+        // polar repetition to create multiple tentacles around y-axis
+        let mpxz = pModPolar(mp.xz, 10.0, 0.0); // internal
         mp.x = mpxz.x;
         mp.z = mpxz.y;
         
-        var d3: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -3.5, 0.1, 0.01, mp.y);
+        // signed dist to cylinder representing tentacle
+        var d3: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -1.5, 0.1, 0.01, mp.y);
+
+        // if dist closer, set material to inside tentacles
         if (d3 < o.d) {
             o.m = 2.0;
         }
-        d3 += (sin(mp.y * 10.0) + sin(mp.y * 23.0)) * 0.03;
+
+        // wavy perturbations to tentacles
+        d3 += (sin(mp.y * 30.0) * 0.02 + sin(mp.y * 60.0) * 0.015 + sin(mp.y * 90.0) * 0.01);
         
-        var d32: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -3.5, 0.1, 0.04, mp.y) * 0.5;
+        // smaller cylinder for finer detail
+        var d32: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -1.5, 0.1, 0.04, mp.y) * 0.5;
         d3 = min(d3, d32);
         o.d = smin(o.d, d3, 0.5);
         
         if (pNew.y < 0.2) {
             var op: vec3<f32> = pNew;
-            let opxz = pModPolar(op.xz, 13.0, 1.0);
+            let opxz = pModPolar(op.xz, 10.0, 1.0);
             op.x = opxz.x;
             op.z = opxz.y;
             
@@ -291,84 +321,60 @@ fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
     return o;
 }
 
-fn calcNormal(o: DE) -> vec3<f32> {
-    var eps: vec3<f32> = vec3<f32>(0.01, 0.0, 0.0);
-    var nor: vec3<f32> = vec3<f32>(
-        map(o.pos + eps.xyy, o.id).d - map(o.pos - eps.xyy, o.id).d,
-        map(o.pos + eps.yxy, o.id).d - map(o.pos - eps.yxy, o.id).d,
-        map(o.pos + eps.yyx, o.id).d - map(o.pos - eps.yyx, o.id).d
-    );
-    return normalize(nor);
-}
-
-// Repeat function
-fn Repeat(pos: vec3<f32>, size: vec3<f32>) -> RC {
-    var o: RC;
-    o.h = size * 0.5;
-    o.id = floor(pos / size); // Used to give a unique id to each cell
-    o.p = pos % size - o.h;   // Use the modulus operator (%) in WGSL
-    return o;
-}
-
 // CastRay function
+// performs ray marching to find object intersections
 fn CastRay(r: Ray) -> DE {
-    var d: f32 = 0.0;
-    var dS: f32 = MAX_DISTANCE;
+    var d: f32 = 0.0; // total dist traveled along ray
 
-    var pos: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    var n: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    var o: DE;
-    var s: DE;
+    var o: DE; // output DE to hold intersection data
+    var s: DE; // temporary DE for current distance estimation
 
-    var dC: f32 = MAX_DISTANCE;
-    var p: vec3<f32>;
-    var q: RC;
+    var dC: f32 = MAX_DISTANCE; // dist to next cell boundary
+    var p: vec3<f32>; // current pos along ray
+    var q: RC; // repetition cell data
     var t: f32 = time;
-    var grid: vec3<f32> = vec3<f32>(10.0, 50.0, 10.0);
-
-    // Initialize a variable to track the closest jellyfish
-    var closestDE: DE;
-    closestDE.d = MAX_DISTANCE; // Start with maximum distance
+    var grid: vec3<f32> = vec3<f32>(5.0, 150.0, 150.0); // grid size for repeating jellies in scene
     
+    // ray marching loop
     for (var i: f32 = 0.0; i < MAX_STEPS; i+=1) {
-        p = r.o + r.d * d;
-        p += 1025.;
+        p = r.o + r.d * d; // current pos along ray
+        p += 1025.; // offset pos to avoid neg coords
 
-        //p.y -= t;  // Make the move up
-        //p.x += t;  // Make the camera fly forward
+        p.y -= 0.5 * t;  // Make the move up
+        p.x += t;  // Make the camera fly forward
 
         //s = map(p, vec3(0.)); // single jelly
 
-        var skip: f32 = N3(q.id);
-        if (skip > 100) {
-            continue; // Skip certain cells based on noise
-        }
+        q = Repeat(p, grid); // repetition cell for current pos
 
-        q = Repeat(p, grid);
-
-        // Apply step component-wise for vec3<f32>
+        // compute dist to cell boundaries along reach axis
         var rCx = ((2.0 * step(0.0, r.d.x) - 1.0) * q.h.x - q.p.x) / r.d.x;
         var rCy = ((2.0 * step(0.0, r.d.y) - 1.0) * q.h.y - q.p.y) / r.d.y;
         var rCz = ((2.0 * step(0.0, r.d.z) - 1.0) * q.h.z - q.p.z) / r.d.z;
 
         dC = min(min(rCx, rCy), rCz) + 0.01; // Distance to cell just past boundary
 
-        var N: f32 = N3(q.id);
-        var offset: vec3<f32> = (N31(N) - 0.5) * grid * vec3<f32>(0.8, 0.8, 0.8); // Adjust multiplier for spread
+        var N: f32 = N3(q.id); // generate noise based on cell ID
+        var offset: vec3<f32> = (N31(N) - 0.5) * grid * vec3<f32>(0.65, 0.65, 0.65); // random offset
         q.p += offset; // Apply the random offset to the position
 
+        // check if ray is close enough to need detailed dist estimation
         if (Dist(q.p.xz, r.d.xz, vec2<f32>(0.0, 0.0)) < 1.1) {
-            s = map(q.p, q.id);
+            s = map(q.p, q.id); // detailed dist estimation
         } else {
             s.d = dC;
         }
 
+        // check if ray hit object or exceeded max dist
         if (s.d < HIT_DISTANCE || d > MAX_DISTANCE) { 
             break;
         }
-        d += min(s.d, dC); // Move to the distance to next cell or surface, whichever is closest
+
+        // advance the ray by min of estimated dist and dist to next cell boundary
+        d += min(s.d, dC); 
     }
 
+    // if intersection found, populate DE struct
     if (s.d < HIT_DISTANCE) {
         o.m = s.m;
         o.d = d;
@@ -387,27 +393,32 @@ fn B(x: f32, y: f32, w: f32, z:f32) -> f32 {
 }
 
 // Volume texture function
-fn VolTex(uv: vec3<f32>, p: vec3<f32>, scale: f32, pump: f32) -> f32 {
-    // uv = the surface position
-    // p = the volume shell position
+fn VolTex(uv: vec3<f32>, // surface pos
+        p: vec3<f32>, // volume shell pos
+        scale: f32, 
+        pump: f32) -> f32 {
     
     var p_scaled: vec3<f32> = p;
-    p_scaled.y *= scale;
+    p_scaled.y *= scale; // scale y components to stretch/compress pattern vertically
 
+    // compute repeating value along x-axis to create horizontal segments
     var s2: f32 = 5.0 * p_scaled.x / twopi;
     var id: f32 = floor(s2);
     s2 = fract(s2);
+
+    // create 2D point centered within segment for radial computations
     var ep: vec2<f32> = vec2<f32>(s2 - 0.5, p_scaled.y - 0.6);
     var ed: f32 = length(ep);
     var e: f32 = B(0.35, 0.45, 0.05, ed);
 
+    // generate high-freq sine wave along segment
     var s: f32 = sin(s2 * twopi * 15.0) * 0.5 + 0.5;
     s = s * s;
     s = s * s;
     s *= smoothstep(-0.3, 1.4, uv.y - cos(s2 * twopi) * 0.2 + 0.3) * smoothstep(-0.6, -0.3, uv.y);
     
-    var t: f32 = 5.0 * time;
-    var mask: f32 = sin(p_scaled.x * twopi * 2.0 + t) * 0.5 + 0.5;
+    // stripes on jelly head
+    var mask: f32 = sin(p_scaled.x * twopi * 2.0) * 0.5 + 0.5;
     s *= mask * mask * 2.0;
     
     return s + e * pump * 2.0;
@@ -416,104 +427,118 @@ fn VolTex(uv: vec3<f32>, p: vec3<f32>, scale: f32, pump: f32) -> f32 {
 // Jelly texture function
 fn JellyTex(p: vec3<f32>) -> vec4<f32> { 
     var pNew = p;
+
+    // convert to spherical coords
     var s: vec3<f32> = vec3<f32>(atan2(pNew.x,pNew.z), length(pNew.xz), pNew.y);
     
-    var b: f32 = 0.75 + sin(s.x * 6.0) * 0.25;
+    // base color 
+    var b: f32 = 0.75 + sin(s.x * 6.0) * 0.25; // sine wave that repeats around jelly
     b = mix(1.0, b, s.y * s.y);
     
-    pNew.x += sin(s.z * 10.0) * 0.1;
-    var b2: f32 = cos(s.x * 26.0) - s.z - 0.7;
+    pNew.x += sin(s.z * 10.0) * 0.1; // vertical ripples 
+    var b2: f32 = cos(s.x * 26.0) - s.z - 0.7; 
    
-    b2 = smoothstep(0.1, 0.6, b2);
-    return vec4<f32>(b + b2, 0.0, 0.0, 0.0);  // Assuming the other channels are zero for this case.
+    b2 = smoothstep(0.1, 0.6, b2); // secondary color component
+    return vec4<f32>(b + b2, 0.0, 0.0, 0.0);  // ripples in red channel only 
 }
 
-fn background(r: vec3<f32>, bg: vec3<f32>) -> vec3<f32> {
-    var x: f32 = atan2(r.x,r.z);      // From -pi to pi
-    var y: f32 = pi * 0.5 - acos(r.y);  // From -1/2pi to 1/2pi
-    
-    var col: vec3<f32> = bg * (1.0 + y);
-    
-    var t: f32 = time;  // Add god rays
-    
-    var a: f32 = sin(r.x);
-    
-    var beam: f32 = clamp(sin(10.0 * x + a * y * 5.0), 0, 1);// + t
-    beam *= clamp(sin(7.0 * x + a * y * 3.5), 0, 1); //-t
-    
-    var beam2: f32 = clamp(sin(42.0 * x + a * y * 21.0), 0, 1); // -t
-    beam2 *= clamp(sin(34.0 * x + a * y * 17.0 ), 0, 1); // +t
-    
-    beam += beam2;
-    col *= 1.0 + beam * 0.05;
+// calculates final color for a given pixel
+fn render(uv: vec2<f32>, camRay: Ray, bg: vec3<f32>, accent: vec3<f32>) -> vec3<f32> {
 
-    return col;
-}
+    var col: vec3<f32> = mix(baseColor, bg, 0.1);
 
-fn render(uv: vec2<f32>, camRay: Ray, depth: f32, bg: vec3<f32>, accent: vec3<f32>) -> vec3<f32> {
-    // Outputs a color
-
-    var col: vec3<f32> = mix(background(camRay.d, bg), vec3(0.f,1.f,1.f), 0.5);
+    // cast ray into scene
     var o: DE = CastRay(camRay);
     
     var t: f32 = time;
     var L: vec3<f32> = up;
 
+    //if ray hits object
     if (o.m > 0.0) {
+        
+        // normal at the intersection point
         var n: vec3<f32> = calcNormal(o);
+
+        // lambertian shading term
         var lambert: f32 = clamp(dot(n, L), 0, 1);
+
+        // reflection vect
         var R: vec3<f32> = reflect(camRay.d, n);
+
+        // fresnel for reflection intensity
         var fresnel: f32 = clamp(1.0 + dot(camRay.d, n), 0, 1);
-        var trans: f32 = (1.0 - fresnel) * 0.5;
-        var refl: vec3<f32> = background(R, bg);
+        
+        // reflected bg color
+        var refl: vec3<f32> = bg;
+
+        // distance fog (background blend)
         var fade: f32 = 0.0;
         
-        if (o.m == 1.0) {  // Hood color
+        // material-specific shading
+        if (o.m == 1.0) { 
+            // jellyfish head
+
+            // accum volutmetric density
             var density: f32 = 0.0;
             for (var i: f32 = 0.0; i < VOLUME_STEPS; i+=1) {
-                var sd: f32 = sph(o.uv, camRay.d, vec3<f32>(0.0), 0.8 + i * 0.015).x;
-                if (sd != MAX_DISTANCE) {
-                    var intersect: vec2<f32> = o.uv.xz + camRay.d.xz * sd;
 
+                // sample positions inside the head
+                var radius =  0.8 + i * 0.015;
+                var sd: f32 = sph(o.uv, camRay.d, vec3<f32>(0.0), radius).x;
+                if (sd != MAX_DISTANCE) {
+
+                    // UV coords for volumetric texture 
+                    var intersect: vec2<f32> = o.uv.xz + camRay.d.xz * sd;
                     var uv: vec3<f32> = vec3<f32>(atan2(intersect.x,intersect.y), length(intersect.xy), o.uv.z);
+
+                    // accum density from volumetric texture
                     density += VolTex(o.uv, uv, 1.4 + i * 0.03, o.pump);
                 }
             }
+
+            // avg density
             var volTex: vec4<f32> = vec4<f32>(accent, density / VOLUME_STEPS);
 
+            // base color from jellyfish texture
             var dif: vec3<f32> = JellyTex(o.uv).rgb;
             dif *= max(0.2, lambert);
 
+            // blend volumetric and base color 
             col = mix(col, volTex.rgb, volTex.a);
             col = mix(col, dif, 0.25);
 
+            // add reflections
             col += fresnel * refl * clamp(dot(up, n), 0, 1);
 
             // Fade
             fade = max(fade, smoothstep(0.0, 1.0, fresnel));
-        } else if (o.m == 2.0) {  // Inside tentacles
+
+        } else if (o.m == 2.0) { 
+            // Inside tentacles
+            
+            // base color
             var dif: vec3<f32> = accent;
-            col = mix(bg, dif, fresnel);
+            col = mix(col, dif, fresnel); // mix with bg
 
-            col *= mix(0.6, 1.0, smoothstep(-1.5, 0.0, o.uv.y));
+            col *= mix(0.6, 1.0, smoothstep(-1.5, 0.0, o.uv.y)); // brightness based on vertical pos
 
+            // glow effect 
             var prop: f32 = o.pump + 0.25;
             prop *= prop * prop;
             col += pow(1.0 - fresnel, 20.0) * dif * prop;
 
-            fade = fresnel;
-        } else if (o.m == 3.0) {  // Outside tentacles
-            var dif: vec3<f32> = accent;
-            var d: f32 = smoothstep(13.0, 100.0, o.d);
-            col = mix(bg, dif, pow(1.0 - fresnel, 5.0)); // col = mix(bg, dif, pow(1.-fresnel, 5.)*d);
+            fade = fresnel; // update fade
+
+        } else if (o.m == 3.0) { 
+            // Outside tentacles
+            var dif: vec3<f32> = accent; // base color 
+            var d: f32 = smoothstep(13.0, 100.0, o.d); 
+            col = mix(bg, dif, pow(1.0 - fresnel, 5.0)); 
         }
 
         fade = max(fade, smoothstep(0.0, 100.0, o.d));
         col = mix(col, bg, fade);
 
-        if (o.m == 4.0) {
-            col = vec3<f32>(1.0, 0.0, 0.0);
-        }
     } else {
         col = bg;
     }
@@ -524,50 +549,37 @@ fn render(uv: vec2<f32>, camRay: Ray, depth: f32, bg: vec3<f32>, accent: vec3<f3
 @fragment
 fn main(in: FragmentInput) -> @location(0) vec4f {
 
+    // setup UVs
     let index = vec2u(in.fragPos.xy);
-    let diffuseColor = textureLoad(colorTexture, index, 0);
 
-    var t = 0.4f * time;
+    var bg = textureLoad(colorTexture, index, 0).xyz; // background is previous pass
+    //bg = vec3<f32>(0.1, 0.5, 0.6); // solid background
 
     var uv: vec2<f32> = in.texCoord;
     uv -= 0.5;
 
-    // background and jelly colors
+    var t = 0.4f * time;
     var accent = mix(accentColor1, accentColor2, sin(t * 15.456));
-    var bg = diffuseColor.xyz;
-    //bg = mix(secondColor1, secondColor2, sin(7.345231));
 
     // camera setup ----------------------
 
-    var cam: camera;
+    let camPos = cameraUniforms.cameraPos.xyz;
+    let camForward = normalize(cameraUniforms.cameraLookPos.xyz - camPos);
+    let camLeft = -normalize(cross(up, camForward));
+    let camUp = -normalize(cross(camForward, camLeft)); 
+    let camCenter = camPos + camForward;
+    let cami = (camPos + camForward) + camLeft * uv.x + camUp * uv.y;
 
-    cam.lookAt = cameraUniforms.cameraLookPos.xyz;
-
-    cam.p = cameraUniforms.cameraPos.xyz;
-
-    cam.forward = normalize(cam.lookAt - cam.p);
-
-    cam.left = -normalize(cross(up, cam.forward));
-
-    cam.up = -normalize(cross(cam.forward, cam.left));
-
-    cam.center = cam.p + cam.forward;
-
-    cam.i = cam.center + cam.left * uv.x + cam.up * uv.y;
-
-    cam.ray.o = cam.p;                      // ray origin = camera position
-    cam.ray.d = normalize(cam.i - cam.p);   // ray direction is the vector from the cam pos through the point on the imaginary screen
-    
+    var camRay: Ray; 
+    camRay.o = camPos;                      // ray origin = camera position
+    camRay.d = normalize(cami - camPos);   // ray direction is the vector from the cam pos through the point on the imaginary screen
     // end camera setup -------------------
     
-    var col: vec3<f32> = render(uv, cam.ray, 0.0, bg, accent);
+    var col: vec3<f32> = render(uv, camRay, bg, accent); // entry-point into jellyfish rendering
     
-    //col = pow(col, vec3<f32>(mix(1.5, 2.6, sin(t + pi))));  // Post-processing
-    //var d: f32 = 1.0 - dot(uv, uv);  // Vignette
-    //col *= (d * d * d) + 0.1;
-    
-    if (cam.p.y >= 40.f) { // FIXME: don't hardcode this
+    if (camPos.y >= 40.f) { // FIXME: don't hardcode this
         return vec4<f32>(bg, 1.0); // don't make jellies if camera is above ocean surface
     }
     return vec4<f32>(col, 1.0);
+
 }
