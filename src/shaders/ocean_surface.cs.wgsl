@@ -115,8 +115,8 @@ fn normal(pos: vec2<f32>, e: f32, depth: f32, wave_amplitude: f32) -> vec3<f32> 
 }
 
 // Sample from an exemplar texture with a random offset
-fn exemplar_sample(pos: vec2<f32>, tile_idx: u32) -> f32 {
-    let offset = g_offsets[tile_idx]; // Add randomness per tile
+fn exemplar_sample(pos: vec2<f32>, triVerts: vec2<f32>) -> f32 {
+    let offset = random2(triVerts); // Add randomness per tile
     return getwaves(pos + offset, 38); // Reuse getwaves function for content
 }
 
@@ -229,9 +229,9 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     // let exemplar_mean = /* compute or estimate the mean of the exemplar */;
 
     // Subtract mean from each sample
-    let sample0 = exemplar_sample(position, get_hex_index(a));// - exemplar_mean;
-    let sample1 = exemplar_sample(position, get_hex_index(b));// - exemplar_mean;
-    let sample2 = exemplar_sample(position, get_hex_index(c));// - exemplar_mean;
+    let sample0 = exemplar_sample(position, a);// - exemplar_mean;
+    let sample1 = exemplar_sample(position, b);// - exemplar_mean;
+    let sample2 = exemplar_sample(position, c);// - exemplar_mean;
 
     // Compute the blended value
     var final_wave_height = sample0 * w1 + sample1 * w2 + sample2 * w3;
