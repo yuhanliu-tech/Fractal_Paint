@@ -11,7 +11,7 @@ const u_g = f32(9.81);
 const PI = 3.14159265358979323846264; // Life of π
 const l = 100.0;
 
-const HEX_SIZE = 15.f; // size of hexagonal tiles
+const HEX_SIZE = 2.f; // size of hexagonal tiles
 const SQRT3 = 1.73205080757;
 
 const g_offsets = array<vec2<f32>, 3>(
