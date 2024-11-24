@@ -20,6 +20,10 @@ import oceanSurfaceComputeRaw from './ocean_surface.cs.wgsl?raw';
 import fullScreenVertRaw from './fullscreen.vs.wgsl?raw';
 import jellyfishFragRaw from './jellyfish.fs.wgsl?raw';
 
+import oceanFloorVertRaw from './ocean_floor.vs.wgsl?raw';
+import oceanFloorFragRaw from './ocean_floor.fs.wgsl?raw';
+import oceanFloorComputeRaw from './ocean_floor.cs.wgsl?raw';
+
 // CONSTANTS (for use in shaders)
 // =================================
 
@@ -72,3 +76,7 @@ export const oceanSurfaceComputeSrc: string = processShaderRaw(oceanSurfaceCompu
 
 export const jellyfishFragSrc: string = processShaderRaw(jellyfishFragRaw);
 export const fullscreenVertSrc: string = processShaderRaw(fullScreenVertRaw);
+
+export const oceanFloorVertSrc: string = processShaderRaw(oceanFloorVertRaw);
+export const oceanFloorFragSrc: string = processShaderRaw(oceanFloorFragRaw);
+export const oceanFloorComputeSrc: string = processShaderRaw(oceanFloorComputeRaw);

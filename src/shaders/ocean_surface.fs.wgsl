@@ -73,7 +73,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     // not cursed texture sampling for ocean color :)
     let uv = vec2f(in.texCoord) / 1024;
     let normal = textureSample(normalMap, texSampler, uv);
-    let oceanColor = vec3<f32>(0, normal.x * 0.45, normal.z * 0.70); // ocean albedo with calculated normals from compute shader
+    let oceanColor = vec3<f32>(0, normal.x * 0.25, normal.z * 0.70); // ocean albedo with calculated normals from compute shader
 
     // ocean color with lighting considerations
 
@@ -97,7 +97,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     var C = fresnel * reflection + scattering;
     C += 0.2;
 
-    let color = mix(oceanColor + C * 0.18, fogColor, fogFactor);
+    let color = mix(oceanColor + C * 0.1, fogColor, fogFactor);
 
     // combine lighting results
     return vec4f(color, 1.0);
