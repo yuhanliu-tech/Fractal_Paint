@@ -11,6 +11,15 @@ const u_g = f32(9.81);
 const PI = 3.14159265358979323846264; // Life of π
 const l = 100.0;
 
+const HEX_SIZE = 2.f; // size of hexagonal tiles
+const SQRT3 = 1.73205080757;
+
+const g_offsets = array<vec2<f32>, 3>(
+    vec2<f32>(0.1039284, 0.20344234),
+    vec2<f32>(0.9458, 0.86602540378),
+    vec2<f32>(0.34578, 0.9023423)
+);
+
 fn random2(p: vec2<f32>) -> vec2<f32> {
     return fract(sin(vec2(dot(p, vec2(127.1f, 311.7f)),
                  dot(p, vec2(269.5f,183.3f))))
@@ -105,22 +114,71 @@ fn normal(pos: vec2<f32>, e: f32, depth: f32, wave_amplitude: f32) -> vec3<f32> 
     );
 }
 
-fn blugausnoise(c1: vec2<f32>) -> f32 {
-
-    let cx = vec3<f32>(c1.x + vec3<f32>(-1,0,1));
-    let f0 = fract(vec4<f32>(cx * 9.1031, c1.y * 8.1030));
-    let f1 = fract(vec4<f32>(cx * 7.0973, c1.y * 6.0970));
-	let t0 = vec4<f32>(f0.xw, f1.xw);
-	let t1 = vec4<f32>(f0.yw, f1.yw);
-	let t2 = vec4<f32>(f0.zw, f1.zw);
-    let p0 = vec4<f32>(t0 + dot(t0, t0.wzxy + 19.19));
-    let p1 = vec4<f32>(t1 + dot(t1, t1.wzxy + 19.19));
-    let p2 = vec4<f32>(t2 + dot(t2, t2.wzxy + 19.19));
-	let n0 = fract(vec4<f32>(p0.zywx * (p0.xxyz + p0.yzzw)));
-	let n1 = fract(vec4<f32>(p1.zywx* (p1.xxyz+ p1.yzzw)));
-	let n2 = fract(vec4<f32>(p2.zywx* (p2.xxyz+ p2.yzzw)));
-    return dot(0.5 * n1 - 0.125 * (n0 + n2), vec4<f32>(1));
+// Sample from an exemplar texture with a random offset
+fn exemplar_sample(pos: vec2<f32>, triVerts: vec2<f32>) -> f32 {
+    let offset = random2(triVerts); // Add randomness per tile
+    return getwaves(pos + offset, 38); // Reuse getwaves function for content
 }
+
+fn get_triangle_vertices(uv: vec2<f32>, hex_size: f32) -> array<vec2<f32>, 3> {
+    let triangle_scale = 0.86602540378; // sqrt(3)/2, for equilateral triangles
+    let scaled_uv = uv / hex_size;      // Scale UV coordinates by hex size
+    var triangle_coords = floor(scaled_uv); // Base integer coordinates
+    var mod_y = floor(triangle_coords.y % 2.0);
+    
+    // Adjust x coordinate for staggered rows
+    triangle_coords.x = triangle_coords.x * 2.0 + mod_y;
+    
+    let local = vec2<f32>(
+        fract(scaled_uv.x + mod_y * 0.5) - 0.5,
+        fract(scaled_uv.y)
+    );
+    
+    // Determine if the point is in the upper or lower triangle
+    if (local.y > abs(local.x) * 2.0) {
+        if (local.x < 0.0) {
+            triangle_coords.x += 1.0;
+        } else {
+            triangle_coords.x -= 1.0;
+        }
+    }
+    if (local.x >= 0.0 && mod_y == 0.0) {
+        triangle_coords.x += 2.0;
+    }
+    
+    // Convert triangle_coords back to grid coordinates for vertex calculation
+    let base_x = triangle_coords.x * 0.5 * hex_size;  // X position
+    let base_y = triangle_coords.y * triangle_scale * hex_size; // Y position
+    
+    // Calculate the three vertices of the triangle
+    let v0 = vec2<f32>(base_x, base_y);                                // Bottom-left vertex
+    let v1 = vec2<f32>(base_x + hex_size * 0.5, base_y + hex_size * triangle_scale); // Top vertex
+    let v2 = vec2<f32>(base_x + hex_size, base_y);                    // Bottom-right vertex
+    
+    return array<vec2<f32>, 3>(v0, v1, v2);
+}
+
+fn is_upper_triangle(uv: vec2<f32>, hex_size: f32) -> i32 {
+    let triangle_scale = 0.86602540378; // sqrt(3)/2, for equilateral triangles
+    let scaled_uv = uv / hex_size;      // Scale UV coordinates by hex size
+    let mod_y = floor(scaled_uv.y % 2.0); // Determine row parity (odd/even)
+    
+    // Local position within the cell
+    let local_x = fract(scaled_uv.x + mod_y * 0.5) - 0.5; // Shifted x-coordinate
+    let local_y = fract(scaled_uv.y);                    // y-coordinate within the cell
+
+    // Check if the point is in the upper or lower triangle
+    if local_y > abs(local_x) * 2.0 {
+        return 1; // Upper triangle
+    }
+    return 0; // Lower triangle
+}
+
+fn get_hex_index(pos: vec2<f32>) -> u32 {
+    let x_steps = pos.x / HEX_SIZE;
+    let y_steps = pos.y / (HEX_SIZE * SQRT3) * 2;
+    return u32(round(x_steps) + round(y_steps)) % 3;
+} 
 
 @compute
 @workgroup_size(16, 16)
@@ -132,17 +190,60 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let iterations = 38;
     let depth = 1.f;
 
-    // Calculate the wave phase
+    // Tessendorf approx with perlin blend ----------------------
     var position = vec2f(x, y) + world_position;
     let wave_amplitude = 0.5 * perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
+    var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude; 
 
-    var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude;
+    // hexagonal tiling & blending: redTexture(x) * bary(p1) + greenTexture(x) * bary(p2) + blueTexture(x) * bary(p3)
+    //---------------------------------------------------------
 
-    textureStore(displacementMap, globalIdx.xy, vec4(wave_height, 0, 0, 1));
+    // overlapped triangle vertices
+    let triangle = get_triangle_vertices(position, HEX_SIZE);
+    let a = triangle[0];
+    let b = triangle[1];
+    let c = triangle[2];
 
-    let normal = normal(position, 0.01, depth, wave_amplitude);
+    // Barycentric computation-----------------------------
+
+    // Compute the areas of the sub-triangles
+    let areaABC = SQRT3 * HEX_SIZE * HEX_SIZE / 4.f;
+    let areaPBC = (b.x - position.x) * (c.y - position.y) - (c.x - position.x) * (b.y - position.y);
+    let areaPCA = (c.x - position.x) * (a.y - position.y) - (a.x - position.x) * (c.y - position.y);
+    let areaPAB = (a.x - position.x) * (b.y - position.y) - (b.x - position.x) * (a.y - position.y);
+
+    // Compute the barycentric weights
+    var w1 = abs(areaPBC / areaABC);
+    var w2 = abs(areaPCA / areaABC);
+    var w3 = abs(areaPAB / areaABC);
+
+    // Compute the sum of squared weights
+    let weight_norm = sqrt(w1 * w1 + w2 * w2 + w3 * w3);
+
+    // Normalize the weights
+    w1 /= weight_norm;
+    w2 /= weight_norm;
+    w3 /= weight_norm;
+
+    // Assume exemplar_mean is precomputed or estimated
+    // let exemplar_mean = /* compute or estimate the mean of the exemplar */;
+
+    // Subtract mean from each sample
+    let sample0 = exemplar_sample(position, a);// - exemplar_mean;
+    let sample1 = exemplar_sample(position, b);// - exemplar_mean;
+    let sample2 = exemplar_sample(position, c);// - exemplar_mean;
+
+    // Compute the blended value
+    var final_wave_height = sample0 * w1 + sample1 * w2 + sample2 * w3;
+    //final_wave_height = f32(is_upper_triangle(position, HEX_SIZE));
     
+    // Add the mean back
+    //final_wave_height += exemplar_mean;
+
+    textureStore(displacementMap, globalIdx.xy, vec4(final_wave_height, 0, 0, 1));
+
     // Store the computed normal in the normal map
+    let normal = normal(position, 0.01, depth, final_wave_height);
     textureStore(normalMap, globalIdx.xy, vec4f(normal + 0.5, 1.0));  // Map from [-1, 1] to [0, 1]
 
 }
