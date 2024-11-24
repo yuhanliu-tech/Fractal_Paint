@@ -38,7 +38,6 @@ export const constants = {
     clusterZ: 16,
 
     maxClusterLights: 1024,
-    numWavelengths: 20,
 };
 
 // =================================
