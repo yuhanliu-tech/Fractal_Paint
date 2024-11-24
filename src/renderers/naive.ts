@@ -317,6 +317,32 @@ export class NaiveRenderer extends renderer.Renderer {
         oceanSurfaceRenderPass.drawIndexed(this.oceanSurface.numIndices);
         oceanSurfaceRenderPass.end();
 
+        const oceanFloorRenderPass = encoder.beginRenderPass({
+            label: "ocean floor render pass",
+            colorAttachments: [
+                {
+                    view: this.renderTextureView,
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "load",
+                    storeOp: "store"
+                },
+            ],
+            depthStencilAttachment: {
+                view: this.depthTextureView,
+                depthClearValue: 1.0,
+                depthLoadOp: "load",
+                depthStoreOp: "store"
+            }
+        });
+        oceanFloorRenderPass.setPipeline(this.oceanFloorRenderPipeline);
+        oceanFloorRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
+        oceanFloorRenderPass.setBindGroup(1, this.oceanFloorChunk.renderBindGroup);
+
+        oceanFloorRenderPass.setVertexBuffer(0, this.oceanFloor.vertexBuffer);
+        oceanFloorRenderPass.setIndexBuffer(this.oceanFloor.indexBuffer, 'uint32');
+        oceanFloorRenderPass.drawIndexed(this.oceanFloor.numIndices);
+        oceanFloorRenderPass.end();
+
         const jellyfishRenderPass = encoder.beginRenderPass({
             label: "jellyfish render pass",
             colorAttachments: [
@@ -340,31 +366,6 @@ export class NaiveRenderer extends renderer.Renderer {
         jellyfishRenderPass.setBindGroup(1, this.jellyfishBindGroup); // Pass textures
         jellyfishRenderPass.draw(6); // Fullscreen quad
         jellyfishRenderPass.end();
-        const oceanFloorRenderPass = encoder.beginRenderPass({
-            label: "ocean floor render pass",
-            colorAttachments: [
-                {
-                    view: canvasTextureView,
-                    clearValue: [0, 0, 0, 0],
-                    loadOp: "load",
-                    storeOp: "store"
-                },
-            ],
-            depthStencilAttachment: {
-                view: this.depthTextureView,
-                depthClearValue: 1.0,
-                depthLoadOp: "load",
-                depthStoreOp: "store"
-            }
-        });
-        oceanFloorRenderPass.setPipeline(this.oceanFloorRenderPipeline);
-        oceanFloorRenderPass.setBindGroup(0, this.sceneUniformsBindGroup);
-        oceanFloorRenderPass.setBindGroup(1, this.oceanFloorChunk.renderBindGroup);
-
-        oceanFloorRenderPass.setVertexBuffer(0, this.oceanFloor.vertexBuffer);
-        oceanFloorRenderPass.setIndexBuffer(this.oceanFloor.indexBuffer, 'uint32');
-        oceanFloorRenderPass.drawIndexed(this.oceanFloor.numIndices);
-        oceanFloorRenderPass.end();
 
         renderer.device.queue.submit([encoder.finish()]);
     }
