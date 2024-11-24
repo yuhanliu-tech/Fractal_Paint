@@ -243,7 +243,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     textureStore(displacementMap, globalIdx.xy, vec4(final_wave_height, 0, 0, 1));
 
     // Store the computed normal in the normal map
-    let normal = normal(position, 0.01, depth, wave_amplitude);
+    let normal = normal(position, 0.01, depth, final_wave_height);
     textureStore(normalMap, globalIdx.xy, vec4f(normal + 0.5, 1.0));  // Map from [-1, 1] to [0, 1]
 
 }
