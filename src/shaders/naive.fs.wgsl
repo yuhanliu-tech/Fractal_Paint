@@ -2,20 +2,21 @@ const numWavelengths = 9; // TODO: Maybe non-constant? May affect performance
 
 struct Wavelength {
     value: f32,
-    weight: f32 // since the wavelengths are not evenly spaced
+    weight: f32, // since the wavelengths are not evenly spaced
+    padding: vec2f
 };
 
 struct WaterProperties {
     sigma_s: f32, // scattering
     sigma_t: f32, // extinction
-    k_d: f32 // downwelling attenunation coefficient
+    k_d: f32, // downwelling attenunation coefficient
+    padding: f32
 }
 
 @group(0) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
-
-@group(1) @binding(0) var<uniform> wavelengths: array<Wavelength, numWavelengths>;
-@group(1) @binding(1) var<uniform> waterProperties: array<WaterProperties, numWavelengths>;
-@group(1) @binding(2) var<uniform> sensitivities: array<vec3f, numWavelengths>;
+@group(0) @binding(1) var<uniform> wavelengths: array<Wavelength, numWavelengths>;
+@group(0) @binding(2) var<uniform> waterProperties: array<WaterProperties, numWavelengths>;
+@group(0) @binding(3) var<uniform> sensitivities: array<vec3f, numWavelengths>;
 
 @group(2) @binding(0) var diffuseTex: texture_2d<f32>;
 @group(2) @binding(1) var diffuseTexSampler: sampler;
@@ -47,6 +48,7 @@ fn upsampleAlbedo(
 fn directSunIrradiance(
     origin: vec3f, // camera position
     point: vec3f, // fragment position
+    nor: vec3f, // normal
     albedo: vec3f,
 ) -> vec3f {
     let depth = -point.y;
@@ -59,7 +61,7 @@ fn directSunIrradiance(
     
     var totalIrradiance = vec3f();
 
-    for (var i = 0u; i < ${numWavelengths}; i++) {
+    for (var i = 0u; i < numWavelengths; i++) {
         let wavelength = wavelengths[i].value;
         let props = waterProperties[i];
 
@@ -80,7 +82,7 @@ fn multipleScatteringIrradiance(
 ) -> vec3f {
     let y_w = -direction.y;
     var totalIrradiance = vec3f();
-    for (var i = 0u; i < ${numWavelengths}; i++) {
+    for (var i = 0u; i < numWavelengths; i++) {
         let wavelength = wavelengths[i].value;
         let props = waterProperties[i];
 
@@ -105,7 +107,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f
 
     let origin = cameraUniforms.cameraPos.xyz;
     let point = in.pos;
-    var irradiance = directSunIrradiance(origin, point, diffuseColor.rgb);
+    var irradiance = directSunIrradiance(origin, point, in.nor, diffuseColor.rgb);
     
     let depth = -origin.y;
     let vector = origin - point;
@@ -118,6 +120,6 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     //     distance
     // );
 
-    let finalColor = diffuseColor.rgb * lightPower;
+    let finalColor = diffuseColor.xyz;
     return vec4(finalColor, 1);
 }

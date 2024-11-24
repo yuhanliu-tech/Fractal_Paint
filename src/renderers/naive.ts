@@ -3,6 +3,7 @@ import * as shaders from '../shaders/shaders';
 import { OceanSurface } from '../stage/oceansurface';
 import * as oceansurface from "../stage/oceansurface"
 import { OceanSurfaceChunk } from '../stage/oceansurfacechunk';
+import { SpectralUniforms } from '../stage/spectraldata';
 import { Stage } from '../stage/stage';
 
 export class NaiveRenderer extends renderer.Renderer {
@@ -31,14 +32,25 @@ export class NaiveRenderer extends renderer.Renderer {
         this.sceneUniformsBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "scene uniforms bind group layout",
             entries: [
-                {
+                {   // camera
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 },
-                {
+                {   // wavelengths
                     binding: 1,
                     visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "uniform" }
+                },
+                {   // water properties
+                    binding: 2,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "uniform" }
+                },
+                {   // wavelength sensitivities
+                    binding: 3,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "uniform" }
                 }
             ]
         });
@@ -50,6 +62,18 @@ export class NaiveRenderer extends renderer.Renderer {
                 {
                     binding: 0,
                     resource: { buffer: this.camera.uniformsBuffer }
+                },
+                {
+                    binding: 1,
+                    resource: { buffer: stage.spectralUniforms.wavelengthGPUBuffer }
+                },
+                {
+                    binding: 2,
+                    resource: { buffer: stage.spectralUniforms.waterPropsGPUBuffer }
+                },
+                {
+                    binding: 3,
+                    resource: { buffer: stage.spectralUniforms.sensitivitiesGPUBuffer }
                 }
             ]
         });

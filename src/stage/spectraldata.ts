@@ -40,24 +40,21 @@ export class SpectralUniforms {
 
     private readonly wavelengthBuffer: ArrayBuffer;
     private readonly wavelengthFloatView: Float32Array;
-    private readonly wavelengthGPUBuffer: GPUBuffer;
+    public readonly wavelengthGPUBuffer: GPUBuffer;
 
     private readonly waterPropsBuffer: ArrayBuffer;
     private readonly waterPropsFloatView: Float32Array;
-    private readonly waterPropsGPUBuffer: GPUBuffer;
+    public readonly waterPropsGPUBuffer: GPUBuffer;
 
     private readonly sensitivitiesBuffer: ArrayBuffer;
     private readonly sensitivitiesFloatView: Float32Array;
-    private readonly sensitivitiesGPUBuffer: GPUBuffer;
-
-    public spectralBindGroupLayout: GPUBindGroupLayout;
-    public spectralBindGroup: GPUBindGroup;
+    public readonly sensitivitiesGPUBuffer: GPUBuffer;
 
     constructor(spectralData: SpectralData) {
         this.spectralData = spectralData;
         this.numWavelengths = spectralData.wavelengths.length;
 
-        this.wavelengthBuffer = new ArrayBuffer(this.numWavelengths * 4 * 2);
+        this.wavelengthBuffer = new ArrayBuffer(this.numWavelengths * 4 * 4);
         this.wavelengthFloatView = new Float32Array(this.wavelengthBuffer);
         this.wavelengthGPUBuffer = device.createBuffer({
             label: "wavelengths",
@@ -67,8 +64,8 @@ export class SpectralUniforms {
 
         // For now the wavelength buffer never changes, so we just set it once at the beginning
         for (let i = 0; i < this.numWavelengths; i++) {
-            this.wavelengthFloatView[i * 2] = spectralData.wavelengths[i];
-            this.wavelengthFloatView[i * 2 + 1] = spectralData.wavelengthWeights[i];
+            this.wavelengthFloatView[i * 4] = spectralData.wavelengths[i];
+            this.wavelengthFloatView[i * 4 + 1] = spectralData.wavelengthWeights[i];
         }
         device.queue.writeBuffer(this.wavelengthGPUBuffer, 0, this.wavelengthBuffer);
         
@@ -86,45 +83,6 @@ export class SpectralUniforms {
             label: "sensitivities",
             size: this.sensitivitiesBuffer.byteLength,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-
-        this.spectralBindGroupLayout = device.createBindGroupLayout({
-            label: "scattering bind group layout",
-            entries: [
-                {
-                    binding: 0,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: { type: "uniform" }
-                },
-                {
-                    binding: 1,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: { type: "uniform" }
-                },
-                {
-                    binding: 2,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: { type: "uniform" }
-                }
-            ]
-        });
-
-        this.spectralBindGroup = device.createBindGroup({
-            layout: this.spectralBindGroupLayout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: { buffer: this.wavelengthGPUBuffer }
-                },
-                {
-                    binding: 1,
-                    resource: { buffer: this.waterPropsGPUBuffer }
-                },
-                {
-                    binding: 2,
-                    resource: { buffer: this.sensitivitiesGPUBuffer }
-                }
-            ]
         });
 
         this.setWaterProps('b_IA');
