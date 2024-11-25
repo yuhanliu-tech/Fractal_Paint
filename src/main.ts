@@ -14,8 +14,11 @@ import { FrameStats } from './stage/framestats';
 await initWebGPU();
 setupLoaders();
 
+// Load GLTF
 let scene = new Scene();
-await scene.loadGltf('./scenes/sponza/Sponza.gltf');
+//await scene.loadGltf('./scenes/sponza/Sponza.gltf');
+await scene.loadGltf('./GLTF/avo/Avocado.gltf');
+//await scene.loadGltf('./GLTF/star/star.gltf');
 
 const camera = new Camera();
 

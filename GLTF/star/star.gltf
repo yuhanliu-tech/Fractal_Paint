@@ -1,0 +1,192 @@
+{
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 63523,
+      "type": "VEC3",
+      "max": [
+        0.36827099323272705,
+        0.52794343233108521,
+        0.39773151278495789
+      ],
+      "min": [
+        -0.36827099323272705,
+        -0.52794355154037476,
+        -0.3977314829826355
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 63523,
+      "type": "VEC3",
+      "max": [
+        "NaN",
+        "NaN",
+        "NaN"
+      ],
+      "min": [
+        "NaN",
+        "NaN",
+        "NaN"
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 63523,
+      "type": "VEC4",
+      "max": [
+        1.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "min": [
+        1.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5125,
+      "count": 380664,
+      "type": "SCALAR",
+      "max": [
+        63522.0
+      ],
+      "min": [
+        0.0
+      ]
+    }
+  ],
+  "asset": {
+    "generator": "Plattar UnityGLTF (6000.0.28f1)",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "uri": "star.bin",
+      "byteLength": 4063576
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 762276
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 762276,
+      "byteLength": 762276
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1524552,
+      "byteLength": 1016368
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2540920,
+      "byteLength": 1522656
+    }
+  ],
+  "images": [
+    {
+      "uri": "red_0.jpg",
+      "name": "red_0"
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicFactor": 0.0
+      },
+      "name": "mat_0"
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TANGENT": 2
+          },
+          "indices": 3,
+          "material": 0
+        }
+      ],
+      "name": "Obj"
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0,
+        -1.0
+      ],
+      "name": "star"
+    },
+    {
+      "children": [
+        2
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.7071068,
+        -0.7071068
+      ],
+      "scale": [
+        1.00000024,
+        1.00000024,
+        1.0
+      ],
+      "name": "star"
+    },
+    {
+      "mesh": 0,
+      "rotation": [
+        0.0,
+        0.0,
+        0.0,
+        -1.0
+      ],
+      "name": "Obj"
+    }
+  ],
+  "samplers": [
+    {
+      "minFilter": 9729
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ],
+      "name": "star"
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0,
+      "name": "red_0"
+    }
+  ]
+}

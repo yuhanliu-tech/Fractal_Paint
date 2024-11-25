@@ -219,59 +219,20 @@ function createTexture(imageBitmap: ImageBitmap): GPUTexture {
 }
 
 function convertWrapModeEnum(wrapMode: number): GPUAddressMode {
-    switch (wrapMode) {
-        case 0x2901: // REPEAT
-            return 'repeat';
-        case 0x812F: // CLAMP_TO_EDGE
-            return 'clamp-to-edge';
-        case 0x8370: // MIRRORED_REPEAT
-            return 'mirror-repeat';
-        default:
-            throw new Error(`unsupported wrap mode: 0x${wrapMode.toString(16)}`);
-    }
+    
+    // always use the repeat wrap mode
+    return 'repeat';
 }
 
 function createSampler(gltfSampler: GLTFSampler): GPUSampler {
     let samplerDescriptor: GPUSamplerDescriptor = {};
-
-    switch (gltfSampler.magFilter) {
-        case 0x2600: // NEAREST
-            samplerDescriptor.magFilter = 'nearest';
-            break;
-        case 0x2601: // LINEAR
-            samplerDescriptor.magFilter = 'linear';
-            break;
-        default:
-            throw new Error(`unsupported magFilter: 0x${gltfSampler.magFilter!.toString(16)}`);
-    }
-
-    switch (gltfSampler.minFilter) {
-        case 0x2600: // NEAREST
-            samplerDescriptor.minFilter = 'nearest';
-            break;
-        case 0x2601: // LINEAR
-            samplerDescriptor.minFilter = 'linear';
-            break;
-        case 0x2700: // NEAREST_MIPMAP_NEAREST
-            samplerDescriptor.minFilter = 'nearest';
-            samplerDescriptor.mipmapFilter = 'nearest';
-            break;
-        case 0x2701: // LINEAR_MIPMAP_NEAREST
-            samplerDescriptor.minFilter = 'linear';
-            samplerDescriptor.mipmapFilter = 'nearest';
-            break;
-        case 0x2702: // NEAREST_MIPMAP_LINEAR
-            samplerDescriptor.minFilter = 'nearest';
-            samplerDescriptor.mipmapFilter = 'linear';
-            break;
-        case 0x2703: // LINEAR_MIPMAP_LINEAR
-            samplerDescriptor.minFilter = 'linear';
-            samplerDescriptor.mipmapFilter = 'linear';
-            break;
-        default:
-            throw new Error(`unsupported minFilter: 0x${gltfSampler.minFilter!.toString(16)}`);
-    }
-
+    
+    // always use the linear minification filter
+    samplerDescriptor.minFilter = 'linear';
+    
+    // always use the linear magnification filter
+    samplerDescriptor.magFilter = 'linear';
+    
     samplerDescriptor.addressModeU = convertWrapModeEnum(gltfSampler.wrapS!);
     samplerDescriptor.addressModeV = convertWrapModeEnum(gltfSampler.wrapT!);
 
