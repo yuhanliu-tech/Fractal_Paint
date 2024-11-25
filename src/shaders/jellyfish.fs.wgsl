@@ -285,7 +285,7 @@ fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
         mp.z = mpxz.y;
         
         // signed dist to cylinder representing tentacle
-        var d3: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -1.5, 0.1, 0.01, mp.y);
+        var d3: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -3.5, 0.1, 0.01, mp.y);
 
         // if dist closer, set material to inside tentacles
         if (d3 < o.d) {
@@ -296,13 +296,13 @@ fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
         d3 += (sin(mp.y * 30.0) * 0.02 + sin(mp.y * 60.0) * 0.015 + sin(mp.y * 90.0) * 0.01);
         
         // smaller cylinder for finer detail
-        var d32: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -1.5, 0.1, 0.04, mp.y) * 0.5;
+        var d32: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -3.5, 0.1, 0.01, mp.y) * 0.5;
         d3 = min(d3, d32);
         o.d = smin(o.d, d3, 0.5);
         
         if (pNew.y < 0.2) {
             var op: vec3<f32> = pNew;
-            let opxz = pModPolar(op.xz, 10.0, 1.0);
+            let opxz = pModPolar(op.xz, 13.0, 1.0);
             op.x = opxz.x;
             op.z = opxz.y;
             
@@ -553,7 +553,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     let index = vec2u(in.fragPos.xy);
 
     var bg = textureLoad(colorTexture, index, 0).xyz; // background is previous pass
-    //bg = vec3<f32>(0.1, 0.5, 0.6); // solid background
+    bg = vec3<f32>(0.1, 0.5, 0.6); // solid background
 
     var uv: vec2<f32> = in.texCoord;
     uv -= 0.5;
