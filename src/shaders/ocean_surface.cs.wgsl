@@ -73,7 +73,7 @@ fn getwaves(position: vec2<f32>, iterations: i32) -> f32 {
 
         let p = vec2f(sin(iter), cos(iter));
 
-        var res = wavedx(position, p, wave_frequency, 0 * timeMultiplier + wave_phase);
+        var res = wavedx(position, p, wave_frequency, time * timeMultiplier + wave_phase);
 
         pos += p * res.y * weight * DRAG_MULT;
 
@@ -134,7 +134,7 @@ fn get_triangle_vertices(position: vec2<f32>) -> array<vec2<f32>, 3> {
         vec2<f32>(base.x + 1.0, base.y)
     );
 
-    let flipY = bool(u32(floor(uv.y)) % 2);
+    let flipY = bool(i32(floor(uv.y)) % 2);
     let yFrac = select(1.0 - fract(uv.y), fract(uv.y), flipY);
 
     var stagger = !flipY;
@@ -220,10 +220,12 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
 
     let areadiff = w1 + w2 + w3 - 1.0;
 
-    if (abs(areadiff) > 0.00001) {
-        textureStore(displacementMap, globalIdx.xy, vec4(0, 0, 0, 1));
-        return;
-    }
+    textureStore(displacementMap, globalIdx.xy, vec4(abs(areadiff) * 1000, 0, 0, 1));
+    // return;
+    // if (abs(areadiff) > 0.00001) {
+    //     textureStore(displacementMap, globalIdx.xy, vec4(0, 0, 0, 1));
+    //     return;
+    // }
 
     // Compute the sum of squared weights
     let weight_norm = sqrt(w1 * w1 + w2 * w2 + w3 * w3);
