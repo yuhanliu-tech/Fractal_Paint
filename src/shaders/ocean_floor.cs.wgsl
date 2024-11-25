@@ -134,11 +134,11 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
 
     // Calculate the wave phase
     var position = vec2f(x, y) + world_position;
-    let wave_amplitude = 1.0 * perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
+    let wave_amplitude = perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
 
-    var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude;
+    var wave_height = 0.6 * getwaves(position, iterations) * depth - depth + wave_amplitude;
 
-    textureStore(displacementMap, globalIdx.xy, vec4(wave_amplitude, 0, 0, 1));
+    textureStore(displacementMap, globalIdx.xy, vec4(wave_height, 0, 0, 1));
 
     let normal = normal(position, 0.01, depth, wave_amplitude);
     
