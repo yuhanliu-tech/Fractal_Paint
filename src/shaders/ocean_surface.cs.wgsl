@@ -63,7 +63,7 @@ fn getwaves(position: vec2<f32>, iterations: i32) -> f32 {
     var iter = 0.f; 
     var sumOfValues = 0.f;
     var sumOfWeights = 0.f;
-    var timeMultiplier = 2.f;
+    var timeMultiplier = 0.f;
     var weight = 1.f;
     let DRAG_MULT = 0.48;
     let wave_phase = length(pos) * 0.1;
@@ -118,7 +118,7 @@ fn normal(pos: vec2<f32>, e: f32, depth: f32, wave_amplitude: f32) -> vec3<f32> 
 
 // Sample from an exemplar texture with a random offset
 fn exemplar_sample(pos: vec2<f32>, triVerts: vec2<f32>) -> f32 {
-    let offset = random2(triVerts); // Add randomness per tile
+    let offset = random2(triVerts) * 100; // Add randomness per tile
     return getwaves(pos + offset, 38); // Reuse getwaves function for content
 }
 
@@ -195,64 +195,32 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     var position = vec2f(x, y) + world_position;
     let wave_amplitude = 0.5 * perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
     var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude; 
-
-    // hexagonal tiling & blending: redTexture(x) * bary(p1) + greenTexture(x) * bary(p2) + blueTexture(x) * bary(p3)
-    //---------------------------------------------------------
-
-    // overlapped triangle vertices
+    
     let triangle = get_triangle_vertices(position);
     let a = triangle[0];
     let b = triangle[1];
     let c = triangle[2];
 
-    // Barycentric computation-----------------------------
-
-    // Compute the areas of the sub-triangles
     let areaABC = SQRT3 * HEX_SIZE * HEX_SIZE / 2.f;
     let areaPBC = doubletrianglearea(position, b, c);
     let areaPCA = doubletrianglearea(position, c, a);
     let areaPAB = doubletrianglearea(position, a, b);
 
-    // Compute the barycentric weights
     var w1 = areaPBC / areaABC;
     var w2 = areaPCA / areaABC;
     var w3 = areaPAB / areaABC;
 
-    let areadiff = w1 + w2 + w3 - 1.0;
-
-    textureStore(displacementMap, globalIdx.xy, vec4(abs(areadiff) * 1000, 0, 0, 1));
-    // return;
-    // if (abs(areadiff) > 0.00001) {
-    //     textureStore(displacementMap, globalIdx.xy, vec4(0, 0, 0, 1));
-    //     return;
-    // }
-
-    // Compute the sum of squared weights
-    let weight_norm = sqrt(w1 * w1 + w2 * w2 + w3 * w3);
-
-    // Normalize the weights
+    let weight_norm = w1 * w1 + w2 * w2 + w3 * w3;
     w1 /= weight_norm;
     w2 /= weight_norm;
     w3 /= weight_norm;
 
-    // Assume exemplar_mean is precomputed or estimated
-    // let exemplar_mean = /* compute or estimate the mean of the exemplar */;
+    let sample0 = exemplar_sample(position, a);
+    let sample1 = exemplar_sample(position, b);
+    let sample2 = exemplar_sample(position, c);
 
-    // Subtract mean from each sample
-    let sample0 = exemplar_sample(position, a);// - exemplar_mean;
-    let sample1 = exemplar_sample(position, b);// - exemplar_mean;
-    let sample2 = exemplar_sample(position, c);// - exemplar_mean;
-
-    // Compute the blended value
     var final_wave_height = sample0 * w1 + sample1 * w2 + sample2 * w3;
-    //final_wave_height = f32(is_upper_triangle(position, HEX_SIZE));
-    
-    // Add the mean back
-    //final_wave_height += exemplar_mean;
-
     textureStore(displacementMap, globalIdx.xy, vec4(final_wave_height, 0, 0, 1));
-    // let color = hashtri(triangle);
-    // textureStore(displacementMap, globalIdx.xy, vec4(color, 0, 0, 1));
 
     // Store the computed normal in the normal map
     let normal = normal(position, 0.01, depth, final_wave_height);
