@@ -63,7 +63,7 @@ fn getwaves(position: vec2<f32>, iterations: i32) -> f32 {
     var iter = 0.f; 
     var sumOfValues = 0.f;
     var sumOfWeights = 0.f;
-    var timeMultiplier = 0.f;
+    var timeMultiplier = 1.f;
     var weight = 1.f;
     let DRAG_MULT = 0.48;
     let wave_phase = length(pos) * 0.1;
@@ -210,10 +210,10 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     var w2 = areaPCA / areaABC;
     var w3 = areaPAB / areaABC;
 
-    let weight_norm = w1 * w1 + w2 * w2 + w3 * w3;
-    w1 /= weight_norm;
-    w2 /= weight_norm;
-    w3 /= weight_norm;
+    // let weight_norm = w1 * w1 + w2 * w2 + w3 * w3;
+    // w1 /= weight_norm;
+    // w2 /= weight_norm;
+    // w3 /= weight_norm;
 
     let sample0 = exemplar_sample(position, a);
     let sample1 = exemplar_sample(position, b);
