@@ -69,7 +69,7 @@ export class OceanSurface {
             entries: [
                 { // displacement
                     binding: 0,
-                    visibility: GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, // Fragment shader stage is only for debug
                     texture: { sampleType: "unfilterable-float" }
                 },
                 { // normals

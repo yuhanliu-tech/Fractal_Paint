@@ -10,6 +10,7 @@ import { setupLoaders, Scene } from './stage/scene';
 import { Camera } from './stage/camera';
 import { Stage } from './stage/stage';
 import { FrameStats } from './stage/framestats';
+import { DebugTexRenderer } from './renderers/debugtex';
 
 await initWebGPU();
 setupLoaders();
@@ -40,17 +41,14 @@ function setRenderer(mode: string) {
         case renderModes.naive:
             renderer = new NaiveRenderer(stage);
             break;
-        case renderModes.forwardPlus:
-            renderer = new ForwardPlusRenderer(stage);
-            break;
-        case renderModes.clusteredDeferred:
-            renderer = new ClusteredDeferredRenderer(stage);
+        case renderModes.debugTex:
+            renderer = new DebugTexRenderer(stage);
             break;
     }
 }
 
-const renderModes = { naive: 'naive', forwardPlus: 'forward+', clusteredDeferred: 'clustered deferred' };
-let renderModeController = gui.add({ mode: renderModes.naive }, 'mode', renderModes);
+const renderModes = { naive: 'naive', debugTex: 'debug texture' };
+let renderModeController = gui.add({ mode: renderModes.debugTex }, 'mode', renderModes);
 renderModeController.onChange(setRenderer);
 
 setRenderer(renderModeController.getValue());
