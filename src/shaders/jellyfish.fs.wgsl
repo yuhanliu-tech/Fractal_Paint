@@ -553,7 +553,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     let index = vec2u(in.fragPos.xy);
 
     var bg = textureLoad(colorTexture, index, 0).xyz; // background is previous pass
-    bg = vec3<f32>(0.1, 0.5, 0.6); // solid background
+    //bg = vec3<f32>(0.1, 0.5, 0.6); // solid background
 
     var uv: vec2<f32> = in.texCoord;
     uv -= 0.5;

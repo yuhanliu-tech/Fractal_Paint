@@ -192,7 +192,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
 
     // Tessendorf approx with perlin blend ----------------------
     var position = vec2f(x, y) + world_position;
-    let wave_amplitude = 0.5 * perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
+    let wave_amplitude = perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
     var wave_height = getwaves(position, iterations) * depth - depth + wave_amplitude; 
 
     // hexagonal tiling & blending: redTexture(x) * bary(p1) + greenTexture(x) * bary(p2) + blueTexture(x) * bary(p3)
