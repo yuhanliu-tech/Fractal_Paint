@@ -1,5 +1,6 @@
 @group(0) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
 @group(0) @binding(1) var<storage, read> instancePositions: array<vec3f>;
+@group(1) @binding(0) var displacementMap: texture_2d<f32>;
 
 struct VertexInput {
     @location(0) position: vec3f,
@@ -17,10 +18,14 @@ fn main(input: VertexInput, @builtin(instance_index) instanceIndex: u32) -> Vert
     var output: VertexOutput;
     
     // Fetch the instance position from the storage buffer
-    let instancePosition = instancePositions[instanceIndex];
+    var instancePosition = instancePositions[instanceIndex];
+
+    let displacement = textureLoad(displacementMap, vec2<i32>(i32(instancePosition.x), i32(instancePosition.z)), 0).x;
+
+    instancePosition.y = f32(displacement) * 10 - 60;
 
     // Compute the world position of the vertex
-    let worldPosition = input.position; //+ instancePosition;
+    let worldPosition = input.position + instancePosition;
 
     // Project to clip space
     output.position = cameraUniforms.viewProj * vec4f(worldPosition, 1.0);

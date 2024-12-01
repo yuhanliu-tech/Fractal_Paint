@@ -9,7 +9,7 @@ export class Coral {
     private camera: Camera;
     cube: Cube;
 
-    numLights = 500;
+    numCoral = 500;
     static readonly maxNumCoral = 5000;
     static readonly numFloatsPerCoral = 8; // vec3f is aligned at 16 byte boundaries
 
@@ -26,7 +26,7 @@ export class Coral {
 
     constructor(camera: Camera) {
         this.camera = camera;
-        this.cube = new Cube(1);
+        this.cube = new Cube(2);
 
         this.coralSetStorageBuffer = device.createBuffer({
             label: "coral",
@@ -90,7 +90,7 @@ export class Coral {
     }
 
     updateCoralSetUniformNumCoral() {
-        device.queue.writeBuffer(this.coralSetStorageBuffer, 0, new Uint32Array([this.numLights]));
+        device.queue.writeBuffer(this.coralSetStorageBuffer, 0, new Uint32Array([this.numCoral]));
     }
 
     // CHECKITOUT: this is where the coral placement compute shader is dispatched from the host
@@ -105,7 +105,7 @@ export class Coral {
 
         computePass.setBindGroup(0, this.placeCoralComputeBindGroup);
 
-        const workgroupCount = Math.ceil(this.numLights / shaders.constants.moveLightsWorkgroupSize);
+        const workgroupCount = Math.ceil(this.numCoral / shaders.constants.moveLightsWorkgroupSize);
         computePass.dispatchWorkgroups(workgroupCount);
 
         computePass.end();

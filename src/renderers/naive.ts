@@ -136,6 +136,7 @@ export class NaiveRenderer extends renderer.Renderer {
                 label: "naive pipeline layout",
                 bindGroupLayouts: [
                     this.sceneUniformsBindGroupLayout,
+                    this.oceanFloor.renderBindGroupLayout
                 ]
             }),
             depthStencil: {
@@ -352,10 +353,11 @@ export class NaiveRenderer extends renderer.Renderer {
         coralRenderPass.setPipeline(this.coralPipeline);
 
         coralRenderPass.setBindGroup(shaders.constants.bindGroup_scene, this.sceneUniformsBindGroup);
+        coralRenderPass.setBindGroup(1, this.oceanFloorChunk.renderBindGroup);
         coralRenderPass.setVertexBuffer(0, this.coral.cube.vertexBuffer);   // Cube vertex data
         coralRenderPass.setIndexBuffer(this.coral.cube.indexBuffer, "uint16");
 
-        coralRenderPass.drawIndexed(this.coral.cube.indexCount, 1/*this.coral.numLights*/); // Instance count = numLights
+        coralRenderPass.drawIndexed(this.coral.cube.indexCount, this.coral.numCoral); // Instance count = numCoral
         coralRenderPass.end();
 
         const oceanSurfaceRenderPass = encoder.beginRenderPass({

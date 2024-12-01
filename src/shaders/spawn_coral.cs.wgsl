@@ -44,8 +44,8 @@ fn perlin3(coralIdx: u32, scaledTime: f32) -> vec3f {
     return vec3f(perlin(seedPos), perlin(seedPos + 110.93), perlin(seedPos + 350.51));
 }
 
-const bboxMin = vec3f(-10, 0, -5);
-const bboxMax = vec3f(10, 8, 5);
+const bboxMin = vec3f(-100, 0, -50);
+const bboxMax = vec3f(100, 8, 50);
 
 // CHECKITOUT: this is an example of a compute shader entry point function
 @compute
@@ -56,17 +56,27 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
         return;
     }
     
-    // Terrain placement: Generate a 3D position
-    let terrainPosition = vec3f(
-        f32(coralIdx % 100) * 0.2 - 10.0, // X: distribute corals horizontally
-        0.0,                              // Y: ground level (add elevation in vs shader)
-        f32(coralIdx / 100) * 0.2 - 5.0   // Z: distribute corals vertically
-    );
+    // Calculate grid size dynamically based on numCoral
+    let gridSize = ceil(sqrt(f32(coralSet.numCoral))); // Ensure enough cells to fit all corals
+    let cellSize = 20.0; // Each cell is 2 units wide and tall
+
+    // Calculate base position in the grid
+    let x = f32(coralIdx % u32(gridSize));
+    let z = f32(coralIdx / u32(gridSize));
 
     // Add noise for natural placement
-    let noiseOffset = perlin3(coralIdx, 0.0) * 0.5; // Scale noise
-    coralSet.coral[coralIdx].pos = terrainPosition + noiseOffset;
-    coralSet.coral[coralIdx].pos = vec3f(0,0,0);
+    let noiseOffset = perlin3(coralIdx, 0.0) * 20.0; // Scale noise
+
+    // Terrain placement: Generate a 3D position
+    let terrainPosition = vec3f(
+        x * cellSize + noiseOffset.x, // X: distribute corals horizontally
+        0.0,                              // Y: ground level (add elevation in vs shader)
+        z * cellSize + noiseOffset.z   // Z: distribute corals vertically
+    );
+    
+    //let noiseOffset = perlin(vec2f(terrainPosition.x, terrainPosition.z) * 0.1) * 0.5; // Scale noise
+    coralSet.coral[coralIdx-1].pos = terrainPosition;
+    //coralSet.coral[coralIdx].pos = vec3f(0,0,0);
     // Assign random rotation and scale for variation
     //coralSet.coral[coralIdx].rotation = vec3f(0.0, random(coralIdx), 0.0);
     //coralSet.coral[coralIdx].scale = random(coralIdx) * 0.5 + 0.5;
