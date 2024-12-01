@@ -11,7 +11,7 @@ import { ObjLoader } from "./objLoader";
 export class Coral {
     private camera: Camera;
     cube: Cube;
-    objLoader: ObjLoader;
+    objModel: ObjLoader | null = null; // Store the loaded model
 
     numCoral = 500;
     static readonly maxNumCoral = 5000;
@@ -36,25 +36,25 @@ export class Coral {
         this.camera = camera;
         this.cube = new Cube(2);
 
-        this.objLoader = new ObjLoader("./wahoo.obj");
+        this.loadModel("wahoo.obj"); // Call the async loader here
 
         this.vertexBuffer = device.createBuffer({
-            size: this.objLoader.vertices.byteLength,
+            size: this.objModel.vertices.byteLength,
             usage: GPUBufferUsage.VERTEX,
             mappedAtCreation: true,
         });
-        new Float32Array(this.vertexBuffer.getMappedRange()).set(this.objLoader.vertices);
+        new Float32Array(this.vertexBuffer.getMappedRange()).set(this.objModel.vertices);
         this.vertexBuffer.unmap();
 
         this.indexBuffer = device.createBuffer({
-            size: this.objLoader.indices.byteLength,
+            size: this.objModel.indices.byteLength,
             usage: GPUBufferUsage.INDEX,
             mappedAtCreation: true,
         });
-        new Uint32Array(this.indexBuffer.getMappedRange()).set(this.objLoader.indices);
+        new Uint32Array(this.indexBuffer.getMappedRange()).set(this.objModel.indices);
         this.indexBuffer.unmap();
 
-        this.indexCount = this.objLoader.indices.length;
+        this.indexCount = this.objModel.indices.length;
 
         this.coralSetStorageBuffer = device.createBuffer({
             label: "coral",
@@ -115,6 +115,16 @@ export class Coral {
             }
         });
 
+    }
+
+    private async loadModel(url: string) {
+        try {
+            console.log(`Loading OBJ model from: ${url}`);
+            this.objModel = await ObjLoader.load(url);
+            console.log("OBJ model loaded successfully.");
+        } catch (error) {
+            console.error("Failed to load OBJ model:", error);
+        }
     }
 
     updateCoralSetUniformNumCoral() {
