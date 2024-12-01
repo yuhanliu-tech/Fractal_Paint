@@ -20,9 +20,18 @@ fn main(input: VertexInput, @builtin(instance_index) instanceIndex: u32) -> Vert
     // Fetch the instance position from the storage buffer
     var instancePosition = instancePositions[instanceIndex];
 
-    let displacement = textureLoad(displacementMap, vec2<i32>(i32(instancePosition.x), i32(instancePosition.z)), 0).x;
+    // Displacement map size
+    let mapSize: f32 = 1024.0;
 
+    // Transform the box's world-space position into the displacement map's local space
+    let localSampleX = ((instancePosition.x - cameraUniforms.cameraPos.x) + mapSize) % mapSize;
+    let localSampleZ = ((instancePosition.z - cameraUniforms.cameraPos.z) + mapSize) % mapSize;
+
+    let displacement = textureLoad(displacementMap, vec2<i32>(i32(localSampleX), i32(localSampleZ)), 0).x;
+
+    instancePosition.x = instancePosition.x - 512;
     instancePosition.y = f32(displacement) * 10 - 60;
+    instancePosition.z = instancePosition.z - 512;
 
     // Compute the world position of the vertex
     let worldPosition = input.position + instancePosition;
