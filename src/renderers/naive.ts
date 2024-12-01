@@ -364,14 +364,14 @@ export class NaiveRenderer extends renderer.Renderer {
                 {
                     view: this.renderTextureView,
                     clearValue: [0, 0, 0, 0],
-                    loadOp: "clear", // load
+                    loadOp: "load", // load
                     storeOp: "store"
                 },
             ],
             depthStencilAttachment: {
                 view: this.depthTextureView,
                 depthClearValue: 1.0,
-                depthLoadOp: "clear", // load 
+                depthLoadOp: "load", // load 
                 depthStoreOp: "store"
             }
         });
