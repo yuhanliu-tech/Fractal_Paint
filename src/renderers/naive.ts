@@ -54,11 +54,26 @@ export class NaiveRenderer extends renderer.Renderer {
         this.sceneUniformsBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "scene uniforms bind group layout",
             entries: [
-                {
+                {   // camera
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 },
+                {   // wavelengths
+                    binding: 1,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "uniform" }
+                },
+                {   // water properties
+                    binding: 2,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "uniform" }
+                },
+                {   // wavelength sensitivities
+                    binding: 3,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "uniform" }
+                }
             ]
         });
 
@@ -69,6 +84,18 @@ export class NaiveRenderer extends renderer.Renderer {
                 {
                     binding: 0,
                     resource: { buffer: this.camera.uniformsBuffer }
+                },
+                {
+                    binding: 1,
+                    resource: { buffer: stage.spectralUniforms.wavelengthGPUBuffer }
+                },
+                {
+                    binding: 2,
+                    resource: { buffer: stage.spectralUniforms.waterPropsGPUBuffer }
+                },
+                {
+                    binding: 3,
+                    resource: { buffer: stage.spectralUniforms.sensitivitiesGPUBuffer }
                 }
             ]
         });
@@ -259,7 +286,7 @@ export class NaiveRenderer extends renderer.Renderer {
         this.oceanFloor.computeTextures(encoder, this.oceanFloorChunk);
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
-        /*const renderPass = encoder.beginRenderPass({
+        const renderPass = encoder.beginRenderPass({
             label: "naive render pass",
             colorAttachments: [
                 {
@@ -289,7 +316,7 @@ export class NaiveRenderer extends renderer.Renderer {
             renderPass.drawIndexed(primitive.numIndices);
         });
 
-        renderPass.end();*/
+        renderPass.end();
 
         const oceanSurfaceRenderPass = encoder.beginRenderPass({
             label: "ocean surface render pass",
@@ -297,14 +324,14 @@ export class NaiveRenderer extends renderer.Renderer {
                 {
                     view: this.renderTextureView,
                     clearValue: [0, 0, 0, 0],
-                    loadOp: "clear", // load
+                    loadOp: "load", // load
                     storeOp: "store"
                 },
             ],
             depthStencilAttachment: {
                 view: this.depthTextureView,
                 depthClearValue: 1.0,
-                depthLoadOp: "clear", // load 
+                depthLoadOp: "load", // load 
                 depthStoreOp: "store"
             }
         });
