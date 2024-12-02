@@ -64,7 +64,7 @@ fn getwaves(position: vec2<f32>, iterations: i32) -> f32 {
 
         let p = vec2f(sin(iter), cos(iter));
 
-        var res = wavedx(position, p, wave_frequency, time * timeMultiplier + wave_phase);
+        var res = wavedx(position, p, wave_frequency, wave_phase);
 
         pos += p * res.y * weight * DRAG_MULT;
 
@@ -74,7 +74,6 @@ fn getwaves(position: vec2<f32>, iterations: i32) -> f32 {
         // next octave
         weight = mix(weight, 0.0, 0.2);
         wave_frequency *= 1.18;
-        timeMultiplier *= 1.07;
 
         iter += 123283.963;
     }
@@ -85,7 +84,7 @@ fn wavedx(position: vec2<f32>,
 direction: vec2<f32>, 
 frequency: f32,
 timeshift: f32) -> vec2<f32> {
-    let x = dot(direction, position) * frequency + timeshift;
+    let x = dot(direction, position) * frequency;
     let wave = exp(sin(x) - 1.0);
     let dx = wave * cos(x);
     return vec2(wave, -dx);
@@ -136,7 +135,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     var position = vec2f(x, y) + world_position;
     let wave_amplitude = perlinNoise(position / 50); // need a better way of adding perlin noise for randomness maybe??
 
-    var wave_height = 0.6 * getwaves(position, iterations) * depth - depth + wave_amplitude;
+    var wave_height = 0.1 * getwaves(position, iterations) * depth - depth + wave_amplitude;
 
     textureStore(displacementMap, globalIdx.xy, vec4(wave_height, 0, 0, 1));
 

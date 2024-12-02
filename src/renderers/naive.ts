@@ -16,7 +16,6 @@ export class NaiveRenderer extends renderer.Renderer {
     oceanFloor: OceanFloor;
     oceanFloorChunk: OceanFloorChunk;
 
-
     sceneUniformsBindGroupLayout: GPUBindGroupLayout;
     sceneUniformsBindGroup: GPUBindGroup;
 
@@ -27,6 +26,7 @@ export class NaiveRenderer extends renderer.Renderer {
     renderTextureView: GPUTextureView;
 
     pipeline: GPURenderPipeline;
+    coralPipeline: GPURenderPipeline;
 
     oceanSurfaceRenderPipeline: GPURenderPipeline;
     oceanFloorRenderPipeline: GPURenderPipeline;
@@ -34,7 +34,7 @@ export class NaiveRenderer extends renderer.Renderer {
     jellyfish: Jellyfish;
     jellyfishBindGroup: GPUBindGroup;
     jellyfishPipeline: GPURenderPipeline;
-    
+
     constructor(stage: Stage) {
         super(stage);
         this.oceanSurface = new OceanSurface();
@@ -54,11 +54,16 @@ export class NaiveRenderer extends renderer.Renderer {
         this.sceneUniformsBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "scene uniforms bind group layout",
             entries: [
-                {
+                { // camera
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 },
+                { // coralSet
+                    binding: 1,
+                    visibility: GPUShaderStage.VERTEX,
+                    buffer: { type: "read-only-storage" }
+                }
             ]
         });
 
@@ -66,9 +71,13 @@ export class NaiveRenderer extends renderer.Renderer {
             label: "scene uniforms bind group",
             layout: this.sceneUniformsBindGroupLayout,
             entries: [
-                {
+                { // camera
                     binding: 0,
                     resource: { buffer: this.camera.uniformsBuffer }
+                },
+                { // coralSet
+                    binding: 1,
+                    resource: { buffer: this.coral.coralSetStorageBuffer }
                 }
             ]
         });
@@ -122,6 +131,39 @@ export class NaiveRenderer extends renderer.Renderer {
             }
         });
 
+        this.coralPipeline = renderer.device.createRenderPipeline({
+            layout: renderer.device.createPipelineLayout({
+                label: "naive pipeline layout",
+                bindGroupLayouts: [
+                    this.sceneUniformsBindGroupLayout,
+                    this.oceanFloor.renderBindGroupLayout
+                ]
+            }),
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: "less",
+                format: "depth24plus"
+            },
+            vertex: {
+                module: renderer.device.createShaderModule({
+                    label: "coral vert shader",
+                    code: shaders.coralVertSrc
+                }),
+                buffers: [renderer.vertexBufferLayout]
+            },
+            fragment: {
+                module: renderer.device.createShaderModule({
+                    label: "coral frag shader",
+                    code: shaders.coralFragSrc,
+                }),
+                targets: [
+                    {
+                        format: renderer.canvasFormat,
+                    }
+                ]
+            }
+        });
+
         this.jellyfish = new Jellyfish();
 
         this.jellyfishBindGroup = renderer.device.createBindGroup({
@@ -130,7 +172,7 @@ export class NaiveRenderer extends renderer.Renderer {
             entries: [
                 {
                     binding: 0,
-                    resource: {buffer : this.chunk.timeBuffer }
+                    resource: { buffer: this.chunk.timeBuffer }
                 },
                 {
                     binding: 1,
@@ -291,20 +333,53 @@ export class NaiveRenderer extends renderer.Renderer {
 
         renderPass.end();*/
 
+        const coralRenderPass = encoder.beginRenderPass({
+            label: "coral render pass",
+            colorAttachments: [
+                {
+                    view: this.renderTextureView,
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "clear",
+                    storeOp: "store"
+                }
+            ],
+            depthStencilAttachment: {
+                view: this.depthTextureView,
+                depthClearValue: 1.0,
+                depthLoadOp: "clear",
+                depthStoreOp: "store"
+            }
+        });
+        coralRenderPass.setPipeline(this.coralPipeline);
+
+        coralRenderPass.setBindGroup(shaders.constants.bindGroup_scene, this.sceneUniformsBindGroup);
+        coralRenderPass.setBindGroup(1, this.oceanFloorChunk.renderBindGroup);
+
+        coralRenderPass.setVertexBuffer(0, this.coral.vertexBuffer); 
+        coralRenderPass.setIndexBuffer(this.coral.indexBuffer, "uint32");
+        coralRenderPass.drawIndexed(this.coral.indexCount, this.coral.numCoral);
+
+        // cubes!
+        //coralRenderPass.setVertexBuffer(0, this.coral.cube.vertexBuffer); 
+        //coralRenderPass.setIndexBuffer(this.coral.cube.indexBuffer, "uint16");
+        //coralRenderPass.drawIndexed(this.coral.cube.indexCount, this.coral.numCoral); // Instance count = numCoral
+
+        coralRenderPass.end();
+
         const oceanSurfaceRenderPass = encoder.beginRenderPass({
             label: "ocean surface render pass",
             colorAttachments: [
                 {
                     view: this.renderTextureView,
                     clearValue: [0, 0, 0, 0],
-                    loadOp: "clear", // load
+                    loadOp: "load", // load
                     storeOp: "store"
                 },
             ],
             depthStencilAttachment: {
                 view: this.depthTextureView,
                 depthClearValue: 1.0,
-                depthLoadOp: "clear", // load 
+                depthLoadOp: "load", // load 
                 depthStoreOp: "store"
             }
         });
@@ -360,7 +435,7 @@ export class NaiveRenderer extends renderer.Renderer {
             //     depthStoreOp: "store",
             // },
         });
-        
+
         jellyfishRenderPass.setPipeline(this.jellyfishPipeline);
         jellyfishRenderPass.setBindGroup(0, this.sceneUniformsBindGroup); // Pass uniforms
         jellyfishRenderPass.setBindGroup(1, this.jellyfishBindGroup); // Pass textures
