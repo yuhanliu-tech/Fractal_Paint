@@ -8,26 +8,10 @@ Implemented in WebGPU.
 
 ## Table of Contents
 
-* 🪸 Coral Reefs: Generation & Placement
 * 🌅 Ocean Surface: Tiling & Blending
 * 🌊 Underwater Spectral Rendering: Multi and Single Scattering
+* 🪸 Coral Reefs: Generation & Placement
 * 🪼 Additional Features
-
-## 🪸 Coral Reefs: Generation & placement
-
-### Fractalized Mesh Generation
-
-Implementation of 2024 SIGGRAPH paper [Into the portal: Directable Fractal Self-Similarity](https://dl.acm.org/doi/10.1145/3641519.3657466) by Alexa Schor and Theodore Kim
-
-<img src="img/fractal_flow.png" width="500"/> 
-
-
-
-### Coral Reef Instanced Rendering
-
-<img src="img/corals.png" width="500"/> 
-
-(FIXME)
 
 ## 🌅 Ocean Surface: Tiling & Blending
 
@@ -45,15 +29,33 @@ This technique is implemented in a WebGPU compute shader, resulting in an ocean 
 
 ## 🌊 Underwater Spectral Rendering: Scattering
 
-(FIXME)
-
 ### Ocean Data-Informed Multiple Scattering
 
-(FIXME)
+(FIXME: Nick)
 
 ### Lighting Effects via Single Scattering
 
-(FIXME)
+(FIXME: Nick)
+
+## 🪸 Coral Reefs: Generation & placement
+
+### Fractalized Mesh Generation
+
+Implementation of 2024 SIGGRAPH paper [Into the portal: Directable Fractal Self-Similarity](https://dl.acm.org/doi/10.1145/3641519.3657466) by Alexa Schor and Theodore Kim
+
+<img src="img/fractal_flow.png" width="500"/> 
+
+We utilize Schor and Kim's technique for fractalizing meshes, which involves using Julia-set-inspired dynamical system to generate specifiable self-similar regions with chaotic details. The workflow, described in the image above, includes taking an arbitrary input OBJ which is then converted into an SDF and used to introduce self-similarity and fractal effects. 
+
+We use this technique for generating fractalized coral assets, and examples of resulting meshes are pictured below.
+
+<img src="img/corals.png" width="500"/> 
+
+### Coral Reef Instanced Rendering
+
+(FIXME: Joanna)
+
+(FIXME: instanced coral image)
 
 ## 🪼 Additional Features 
 
