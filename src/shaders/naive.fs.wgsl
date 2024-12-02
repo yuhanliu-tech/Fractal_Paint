@@ -28,7 +28,7 @@ struct FragmentInput
     @location(2) uv: vec2f
 }
 
-const SUN_STRENGTH = 40.0;
+const SUN_STRENGTH = 10.0;
 
 fn upsampleAlbedo(
     albedo: vec3f,
@@ -72,11 +72,34 @@ fn directSunIrradiance(
         totalIrradiance += irradiance * wavelengths[i].weight * sensitivities[i];
     }
 
-    return totalIrradiance;
+    return totalIrradiance / 300;
+}
+
+fn testDirectIrradiance(
+    origin: vec3f, // camera position
+    point: vec3f, // fragment position
+    nor: vec3f, // normal
+    albedo: vec3f,
+) -> f32 {
+
+    let depth = point.y;
+    let diffuse = sqrt(clamp(0.5 + 0.5 * nor.y, 0, 1)); // TODO: maybe use a nicer surface model
+
+    let wavelength = wavelengths[0].value;
+    let props = waterProperties[0];
+    let downwellingExtinction = exp(-props.k_d * depth);
+    let directExtinction = exp(-props.sigma_t * length(point - origin));
+
+    let upsampledAlbedo = upsampleAlbedo(albedo, wavelength);
+    let irradiance = (upsampledAlbedo * diffuse) * SUN_STRENGTH * downwellingExtinction * directExtinction;
+
+    let redchannel = irradiance * wavelengths[0].weight * sensitivities[0].x;
+
+    return redchannel;
 }
 
 fn multipleScatteringIrradiance(
-    depth: vec3f,
+    depth: f32,
     direction: vec3f,
     distance: f32
 ) -> vec3f {
@@ -94,7 +117,7 @@ fn multipleScatteringIrradiance(
 
         totalIrradiance += irradiance * wavelengths[i].weight * sensitivities[i];
     }
-    return totalIrradiance;
+    return totalIrradiance / 300;
 }
 
 @fragment
@@ -109,17 +132,16 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     let point = in.pos;
     var irradiance = directSunIrradiance(origin, point, in.nor, diffuseColor.rgb);
     
-    let depth = -origin.y;
+    let depth = origin.y;
     let vector = origin - point;
     let direction = normalize(vector);
     let distance = length(vector);
 
-    // irradiance += multipleScatteringIrradiance(
-    //     depth,
-    //     direction,
-    //     distance
-    // );
+    irradiance += multipleScatteringIrradiance(
+        depth,
+        direction,
+        distance
+    );
 
-    let finalColor = diffuseColor.xyz;
-    return vec4(finalColor, 1);
+    return vec4(irradiance.xyz, 1);
 }

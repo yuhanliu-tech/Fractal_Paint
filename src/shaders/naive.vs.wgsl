@@ -21,7 +21,8 @@ struct VertexOutput
 @vertex
 fn main(in: VertexInput) -> VertexOutput
 {
-    let modelPos = modelMat * vec4(in.pos, 1);
+    var modelPos = modelMat * vec4(in.pos, 1);
+    modelPos.y -= 20.0; // temp hack to put sponza underwater
 
     var out: VertexOutput;
     out.fragPos = cameraUniforms.viewProj * modelPos;
