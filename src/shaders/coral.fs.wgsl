@@ -11,7 +11,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
 
     let diffuse = max(dot(normalizedNormal, lightDirection), 0.3);
 
-    let baseColor = vec3f(0.5, 0.2, 0.25);
+    let baseColor = vec3f(0.8, 0.2, 0.25);
     let shadedColor = baseColor * diffuse;
 
     return vec4f(shadedColor, 1.0);
