@@ -1,3 +1,4 @@
+
 export class ObjLoader {
     vertices: Float32Array;
     normals: Float32Array; // Added for normals
