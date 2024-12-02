@@ -23,7 +23,7 @@ const camera = new Camera();
 // Determine the base path dynamically
 const basePath = window.location.hostname === 'localhost'
     ? '' // No base path for local development
-    : '/under_the_sea/blob/main'; // Base path for deployment
+    : '/under_the_sea'; // Base path for deployment
 const coral = await makeCoral(camera, `${basePath}/GLTF/seastar.obj`);
 
 const stats = new Stats();
