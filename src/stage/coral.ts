@@ -1,22 +1,18 @@
 import { vec3 } from "wgpu-matrix";
 import { device } from "../renderer";
-
-import * as fs from "fs";
 import * as shaders from '../shaders/shaders';
 import { Camera } from "./camera";
 import { Cube } from "./cube";
-
 import { ObjLoader } from "./objLoader";
 
 export class Coral {
     private camera: Camera;
     cube: Cube;
     objModel: ObjLoader | null = null; // Store the loaded model
-
     numCoral = 500;
+
     static readonly maxNumCoral = 5000;
     static readonly numFloatsPerCoral = 8; // vec3f is aligned at 16 byte boundaries
-
     static readonly lightIntensity = 0.1;
 
     coralArray = new Float32Array(Coral.maxNumCoral * Coral.numFloatsPerCoral);
@@ -28,33 +24,38 @@ export class Coral {
     placeCoralComputeBindGroup: GPUBindGroup;
     placeCoralComputePipeline: GPUComputePipeline;
 
-    vertexBuffer: GPUBuffer; 
-    indexBuffer: GPUBuffer; 
-    indexCount: number;
+    vertexBuffer: GPUBuffer | null = null; 
+    indexBuffer: GPUBuffer | null = null; 
+    indexCount: number = 0;
 
     constructor(camera: Camera) {
         this.camera = camera;
         this.cube = new Cube(2);
 
-        this.loadModel("wahoo.obj"); // Call the async loader here
-
-        this.vertexBuffer = device.createBuffer({
-            size: this.objModel.vertices.byteLength,
-            usage: GPUBufferUsage.VERTEX,
-            mappedAtCreation: true,
+        // Initialize the model asynchronously
+        this.loadModel("./wahoo.obj").then(() => {
+            if (this.objModel) {
+                this.vertexBuffer = device.createBuffer({
+                    size: this.objModel.vertices.byteLength,
+                    usage: GPUBufferUsage.VERTEX,
+                    mappedAtCreation: true,
+                });
+                new Float32Array(this.vertexBuffer.getMappedRange()).set(this.objModel.vertices);
+                device.queue.writeBuffer(this.vertexBuffer, 0, this.objModel.vertices);
+        
+                this.indexBuffer = device.createBuffer({
+                    size: this.objModel.indices.byteLength,
+                    usage: GPUBufferUsage.INDEX,
+                    mappedAtCreation: true,
+                });
+                new Uint32Array(this.indexBuffer.getMappedRange()).set(this.objModel.indices);
+                device.queue.writeBuffer(this.indexBuffer, 0, this.objModel.indices);
+        
+                this.indexCount = this.objModel.indices.length;
+            } else {
+                console.error("Failed to initialize buffers due to missing model.");
+            }
         });
-        new Float32Array(this.vertexBuffer.getMappedRange()).set(this.objModel.vertices);
-        this.vertexBuffer.unmap();
-
-        this.indexBuffer = device.createBuffer({
-            size: this.objModel.indices.byteLength,
-            usage: GPUBufferUsage.INDEX,
-            mappedAtCreation: true,
-        });
-        new Uint32Array(this.indexBuffer.getMappedRange()).set(this.objModel.indices);
-        this.indexBuffer.unmap();
-
-        this.indexCount = this.objModel.indices.length;
 
         this.coralSetStorageBuffer = device.createBuffer({
             label: "coral",
@@ -72,16 +73,8 @@ export class Coral {
         this.placeCoralComputeBindGroupLayout = device.createBindGroupLayout({
             label: "place coral compute bind group layout",
             entries: [
-                { // coralSet
-                    binding: 0,
-                    visibility: GPUShaderStage.COMPUTE,
-                    buffer: { type: "storage" }
-                },
-                { // camera position
-                    binding: 1,
-                    visibility: GPUShaderStage.COMPUTE,
-                    buffer: { type: "uniform" }
-                }
+                { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+                { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform" } }
             ]
         });
 
@@ -89,14 +82,8 @@ export class Coral {
             label: "place coral compute bind group",
             layout: this.placeCoralComputeBindGroupLayout,
             entries: [
-                {
-                    binding: 0,
-                    resource: { buffer: this.coralSetStorageBuffer }
-                },
-                {
-                    binding: 1,
-                    resource: { buffer: this.camPosUniformBuffer }
-                }
+                { binding: 0, resource: { buffer: this.coralSetStorageBuffer } },
+                { binding: 1, resource: { buffer: this.camPosUniformBuffer } }
             ]
         });
 
@@ -114,7 +101,6 @@ export class Coral {
                 entryPoint: "main"
             }
         });
-
     }
 
     private async loadModel(url: string) {
@@ -132,28 +118,23 @@ export class Coral {
     }
 
     draw(passEncoder: GPURenderPassEncoder) {
+        if (!this.vertexBuffer || !this.indexBuffer) return;
         passEncoder.setVertexBuffer(0, this.vertexBuffer);
         passEncoder.setIndexBuffer(this.indexBuffer, "uint32");
         passEncoder.drawIndexed(this.indexCount, this.numCoral);
     }
 
-    // CHECKITOUT: this is where the coral placement compute shader is dispatched from the host
     onFrame(x: number, y: number) {
         device.queue.writeBuffer(this.camPosUniformBuffer, 0, new Float32Array([x, y]));
-
-        // not using same encoder as render pass so this doesn't interfere with measuring actual rendering performance
         const encoder = device.createCommandEncoder();
-
         const computePass = encoder.beginComputePass();
         computePass.setPipeline(this.placeCoralComputePipeline);
-
         computePass.setBindGroup(0, this.placeCoralComputeBindGroup);
 
         const workgroupCount = Math.ceil(this.numCoral / shaders.constants.moveLightsWorkgroupSize);
         computePass.dispatchWorkgroups(workgroupCount);
 
         computePass.end();
-
         device.queue.submit([encoder.finish()]);
     }
 }

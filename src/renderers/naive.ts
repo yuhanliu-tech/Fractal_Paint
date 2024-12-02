@@ -356,7 +356,7 @@ export class NaiveRenderer extends renderer.Renderer {
         coralRenderPass.setBindGroup(1, this.oceanFloorChunk.renderBindGroup);
 
         coralRenderPass.setVertexBuffer(0, this.coral.vertexBuffer); 
-        coralRenderPass.setIndexBuffer(this.coral.indexBuffer, "uint16");
+        coralRenderPass.setIndexBuffer(this.coral.indexBuffer, "uint32");
         coralRenderPass.drawIndexed(this.coral.indexCount, this.coral.numCoral);
 
         //coralRenderPass.setVertexBuffer(0, this.coral.cube.vertexBuffer); 
