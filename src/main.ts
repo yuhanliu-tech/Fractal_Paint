@@ -24,7 +24,7 @@ const camera = new Camera();
 const basePath = window.location.hostname === 'localhost'
     ? '' // No base path for local development
     : '/under_the_sea'; // Base path for deployment
-const coral = await makeCoral(camera, `${basePath}/GLTF/seastar.obj`);
+const coral = await makeCoral(camera, `${basePath}/GLTF/wahoo.obj`);
 
 const stats = new Stats();
 stats.showPanel(0);

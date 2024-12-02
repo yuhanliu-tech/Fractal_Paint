@@ -66,9 +66,9 @@ export class Coral {
 
         for (let i = 0, j = 0; i < positions.length / 3; i++) {
             let scale = hash([positions[i * 3], positions[i * 3 + 2]]) * 20; // don't use this for now
-            interleavedData[j++] = positions[i * 3] * 20;     // x
-            interleavedData[j++] = positions[i * 3 + 1] * 20; // y
-            interleavedData[j++] = positions[i * 3 + 2] * 20; // z
+            interleavedData[j++] = positions[i * 3];     // x
+            interleavedData[j++] = positions[i * 3 + 1]; // y
+            interleavedData[j++] = positions[i * 3 + 2]; // z
             interleavedData[j++] = normals[i * 3];       // nx (placeholder)
             interleavedData[j++] = normals[i * 3 + 1];   // ny (placeholder)
             interleavedData[j++] = normals[i * 3 + 2];   // nz (placeholder)
