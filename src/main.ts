@@ -7,7 +7,7 @@ import { ForwardPlusRenderer } from './renderers/forward_plus';
 import { ClusteredDeferredRenderer } from './renderers/clustered_deferred';
 
 import { setupLoaders, Scene } from './stage/scene';
-import { Coral } from './stage/coral';
+import { Coral, makeCoral } from './stage/coral';
 import { Camera } from './stage/camera';
 import { Stage } from './stage/stage';
 import { FrameStats } from './stage/framestats';
@@ -19,7 +19,7 @@ let scene = new Scene();
 await scene.loadGltf('./scenes/sponza/Sponza.gltf');
 
 const camera = new Camera();
-const coral = new Coral(camera);
+const coral = await makeCoral(camera, './GLTF/seastar.obj');
 
 const stats = new Stats();
 stats.showPanel(0);

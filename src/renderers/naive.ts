@@ -359,6 +359,7 @@ export class NaiveRenderer extends renderer.Renderer {
         coralRenderPass.setIndexBuffer(this.coral.indexBuffer, "uint32");
         coralRenderPass.drawIndexed(this.coral.indexCount, this.coral.numCoral);
 
+        // cubes!
         //coralRenderPass.setVertexBuffer(0, this.coral.cube.vertexBuffer); 
         //coralRenderPass.setIndexBuffer(this.coral.cube.indexBuffer, "uint16");
         //coralRenderPass.drawIndexed(this.coral.cube.indexCount, this.coral.numCoral); // Instance count = numCoral
