@@ -23,6 +23,7 @@ fn main(in: VertexInput) -> VertexOutput
 {
     var modelPos = modelMat * vec4(in.pos, 1);
     modelPos.y -= 20.0; // temp hack to put sponza underwater
+    modelPos.w /= 3.0;
 
     var out: VertexOutput;
     out.fragPos = cameraUniforms.viewProj * modelPos;
