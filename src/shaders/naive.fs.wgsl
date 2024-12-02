@@ -51,7 +51,7 @@ fn directSunIrradiance(
     nor: vec3f, // normal
     albedo: vec3f,
 ) -> vec3f {
-    let depth = point.y;
+    let depth = -point.y;
 
     // TODO: maybe do something a bit more physically motivated?
     // Maybe just a lambert term with a static sun direction?
@@ -103,7 +103,7 @@ fn multipleScatteringIrradiance(
     direction: vec3f,
     distance: f32
 ) -> vec3f {
-    let y_w = direction.y;
+    let y_w = -direction.y;
     var totalIrradiance = vec3f();
     for (var i = 0u; i < numWavelengths; i++) {
         let wavelength = wavelengths[i].value;
@@ -130,10 +130,9 @@ fn main(in: FragmentInput) -> @location(0) vec4f
 
     let origin = cameraUniforms.cameraPos.xyz;
     let point = in.pos;
-    var irradiance = vec3f();
-    // var irradiance = directSunIrradiance(origin, point, in.nor, diffuseColor.rgb);
+    var irradiance = directSunIrradiance(origin, point, in.nor, diffuseColor.rgb);
     
-    let depth = -origin.y;
+    let depth = origin.y;
     let vector = origin - point;
     let direction = normalize(vector);
     let distance = length(vector);
