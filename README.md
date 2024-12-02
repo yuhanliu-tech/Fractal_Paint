@@ -6,6 +6,8 @@ Implemented in WebGPU.
 
 [Live Demo](https://yuhanliu-tech.github.io/nautilus-engine/)
 
+<img src="img/cover.png" width="500"/> 
+
 ## Table of Contents
 
 * 🌅 Ocean Surface: Tiling & Blending
