@@ -19,12 +19,7 @@ let scene = new Scene();
 await scene.loadGltf('./scenes/sponza/Sponza.gltf');
 
 const camera = new Camera();
-
-// Determine the base path dynamically
-const basePath = window.location.hostname === 'localhost'
-    ? '' // No base path for local development
-    : '/under_the_sea'; // Base path for deployment
-const coral = await makeCoral(camera, `${basePath}/GLTF/wahoo.obj`);
+const coral = await makeCoral(camera, './GLTF/wahoo.obj');
 
 const stats = new Stats();
 stats.showPanel(0);
