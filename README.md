@@ -30,12 +30,20 @@ This technique is implemented in a WebGPU compute shader, resulting in an ocean 
 ## 🌊 Underwater Spectral Rendering: Scattering
 
 ### Ocean Data-Informed Multiple Scattering
+We implement the constant-time multiscattering estimation (assuming a near-constant elevation for the ocean surface and floor in the area about a particular fragment) from [Real-time Underwater Spectral Rendering](https://onlinelibrary.wiley.com/doi/epdf/10.1111/cgf.15009).
 
-(FIXME: Nick)
+Data is taken from [an open source paper](https://figshare.com/articles/dataset/Dataset_to_accompany_paper_Depth_profiles_of_Jerlov_water_types/21710252) for 3 different Jerlov water types, each of which classifies a set of different ocean water properties.
+
+Below are a handful of results from different ocean properties:
+
+<img src="img/multi1.png" width="250">
+<img src="img/multi2.png" width="250">
+<img src="img/multi3.png" width="250">
 
 ### Lighting Effects via Single Scattering
+Similarly, we implement a froxel-based estimation of single scattering (i.e. light that is reflected off a particle of the participating medium once) from the same paper.
 
-(FIXME: Nick)
+TODO: implementation
 
 ## 🪸 Coral Reefs: Generation & placement
 
@@ -61,13 +69,15 @@ For added realism, a Perlin noise function is applied to each coral's position w
 
 The computed positions, along with other instance-specific attributes like orientation and scale, are stored in a GPU storage buffer. These attributes are then passed to the vertex shader during rendering. GPU instancing allows all corals to share a single model while being uniquely positioned and transformed, significantly reducing the overhead of rendering thousands of individual corals. This approach ensures high performance while maintaining visual complexity, allowing for the creation of large-scale, procedurally generated coral reef environments that move seamlessly with the player's perspective.
 
-(FIXME: instanced coral image)
+Below is an image showing instanced rendering of fractalized sea stars. 
+
+<img src="img/starfish.png" width="500"/> 
 
 ## 🪼 Additional Features 
 
 ### Raymarched Jellyfish
 
-(FIXME: Jellyfish img)
+<img src="img/jellies.png" width="250"/> 
 
 We created a fragment shader that utilizes ray marching to render jellyfish NPCs. The shader uses ray marching to traverse the underwater space, calculating distances to shapes defined by signed distance functions. Procedural noise functions drive animated effects like pulsation, creating a sense of movement. Volumetric techniques simulate translucent effects, creating the appearance of light scattering within the jellyfish, while custom lighting calculations enhance realism with reflections, refractions, and ambient light. The shader efficiently renders multiple jellyfish instances through spatial repetition functions and optimizes performance by skipping empty spaces during ray marching.
 
