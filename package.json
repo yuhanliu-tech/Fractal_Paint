@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --open",
-    "build": "vite build && cp -r GLTF/ scenes/ dist/ waterprops/"
+    "build": "vite build && cp -r GLTF/ scenes/ waterprops/ dist/"
   },
   "devDependencies": {
     "@types/dat.gui": "^0.7.13",
