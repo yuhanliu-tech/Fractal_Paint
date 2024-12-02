@@ -53,8 +53,10 @@ export class Camera {
     uniforms: CameraUniforms = new CameraUniforms();
     uniformsBuffer: GPUBuffer;
 
+    private _cameraPos: [number, number, number] = [-7, 2, 0];
+
     projMat: Mat4 = mat4.create();
-    cameraPos: Vec3 = vec3.create(-7, 2, 0);
+    //cameraPos: Vec3 = vec3.create(-7, 2, 0);
     cameraFront: Vec3 = vec3.create(0, 0, -1);
     cameraUp: Vec3 = vec3.create(0, 1, 0);
     cameraRight: Vec3 = vec3.create(1, 0, 0);
@@ -67,6 +69,16 @@ export class Camera {
     static readonly farPlane = 1000;
 
     keys: { [key: string]: boolean } = {};
+
+    get cameraPos() {
+        return this._cameraPos;
+    }
+
+    set cameraPos(newPos: [number, number, number]) {
+        this._cameraPos[0] = newPos[0];
+        this._cameraPos[1] = newPos[1];
+        this._cameraPos[2] = newPos[2];
+    }
 
     constructor() {
         this.uniformsBuffer = device.createBuffer({
@@ -173,7 +185,7 @@ export class Camera {
         this.uniforms.yScale = 1 / this.projMat[5];
         this.uniforms.near = Camera.nearPlane;
         this.uniforms.logfarovernear = Math.log(Camera.farPlane / Camera.nearPlane);
-        this.uniforms.cameraPos = this.cameraPos;
+        this.uniforms.cameraPos = vec3.create(this.cameraPos[0], this.cameraPos[1], this.cameraPos[2]);
 
         this.uniforms.cameraLookPos = lookPos;
 

@@ -21,10 +21,10 @@ const halfpi: f32 = 1.570796326794896619;
 const twopi: f32 = 6.283185307179586;
 
 // parameters to control ray marching 
-const MAX_STEPS: f32 = 150.f;
+const MAX_STEPS: f32 = 100.f;
 const VOLUME_STEPS: f32 =  8.f;
-const MIN_DISTANCE: f32 =  0.05;
-const MAX_DISTANCE: f32 =  80.f;
+const MIN_DISTANCE: f32 =  0.1;
+const MAX_DISTANCE: f32 =  100.f;
 const HIT_DISTANCE: f32 =  0.01;
 
 // Colors
@@ -279,7 +279,7 @@ fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
         var mp: vec3<f32> = pNew;
 
         // polar repetition to create multiple tentacles around y-axis
-        let mpxz = pModPolar(mp.xz, 10.0, 0.0); // internal
+        let mpxz = pModPolar(mp.xz, 5.0, 0.0); // internal
         mp.x = mpxz.x;
         mp.z = mpxz.y;
         
@@ -340,7 +340,7 @@ fn CastRay(r: Ray) -> DE {
         p += 1025.; // offset pos to avoid neg coords
 
         p.y -= 0.5 * t;  // Make the move up
-        p.x += t;  // Make the camera fly forward
+        p.x += t;  // Make jellyfish fly forward
 
         //s = map(p, vec3(0.)); // single jelly
 
@@ -354,7 +354,7 @@ fn CastRay(r: Ray) -> DE {
         dC = min(min(rCx, rCy), rCz) + 0.01; // Distance to cell just past boundary
 
         var N: f32 = N3(q.id); // generate noise based on cell ID
-        var offset: vec3<f32> = (N31(N) - 0.5) * grid * vec3<f32>(0.65, 0.65, 0.65); // random offset
+        var offset: vec3<f32> = (N31(N) - 0.5) * grid * vec3<f32>(0.5, 0.7, 0.5); // random offset
         q.p += offset; // Apply the random offset to the position
 
         // check if ray is close enough to need detailed dist estimation
@@ -557,8 +557,8 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     var uv: vec2<f32> = in.texCoord;
     uv -= 0.5;
 
-    var t = 0.4f * time;
-    var accent = mix(accentColor1, accentColor2, sin(t * 15.456));
+    //var t = 0.4f * time;
+    var accent = mix(accentColor1, accentColor2, sin(15.456));
 
     // camera setup ----------------------
 

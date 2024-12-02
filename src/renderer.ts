@@ -1,4 +1,5 @@
 import { Scene } from './stage/scene';
+import { Coral } from './stage/coral';
 import { Camera } from './stage/camera';
 import { Stage } from './stage/stage';
 import { FrameStats } from './stage/framestats';
@@ -26,8 +27,7 @@ export async function initWebGPU() {
 
     aspectRatio = canvas.width / canvas.height;
 
-    if (!navigator.gpu)
-    {
+    if (!navigator.gpu) {
         let errorMessageElement = document.createElement("h1");
         errorMessageElement.textContent = "This browser doesn't support WebGPU! Try using Google Chrome.";
         errorMessageElement.style.paddingLeft = '0.4em';
@@ -37,8 +37,7 @@ export async function initWebGPU() {
     }
 
     const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter)
-    {
+    if (!adapter) {
         throw new Error("no appropriate GPUAdapter found");
     }
 
@@ -104,6 +103,7 @@ export const vertexBufferLayout: GPUVertexBufferLayout = {
 
 export abstract class Renderer {
     protected scene: Scene;
+    protected coral: Coral;
     protected spectralUniforms: SpectralUniforms;
     protected camera: Camera;
     protected stats: Stats;
@@ -114,6 +114,7 @@ export abstract class Renderer {
 
     constructor(stage: Stage) {
         this.scene = stage.scene;
+        this.coral = stage.coral;
         this.spectralUniforms = stage.spectralUniforms;
         this.camera = stage.camera;
         this.stats = stage.stats;
@@ -141,6 +142,7 @@ export abstract class Renderer {
     private onFrame(time: DOMHighResTimeStamp) {
         let deltaTime = time - this.prevTime;
         this.camera.onFrame(deltaTime);
+        this.coral.onFrame(this.camera.cameraPos[0], this.camera.cameraPos[2]);
 
         this.stats.begin();
 
@@ -149,7 +151,7 @@ export abstract class Renderer {
         this.stats.end();
         this.frameStats.update(time);
 
-        this.prevTime = time; 
+        this.prevTime = time;
         this.frameRequestId = requestAnimationFrame((t) => this.onFrame(t));
     }
 }
