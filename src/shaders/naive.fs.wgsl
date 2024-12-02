@@ -137,11 +137,12 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     let direction = normalize(vector);
     let distance = length(vector);
 
-    irradiance += multipleScatteringIrradiance(
-        depth,
-        direction,
-        distance
-    );
+    // TODO: fix multiple scattering
+    // irradiance += multipleScatteringIrradiance(
+    //     depth,
+    //     direction,
+    //     distance
+    // );
 
     return vec4(irradiance.xyz, 1);
 }
