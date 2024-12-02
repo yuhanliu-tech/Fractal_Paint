@@ -30,12 +30,22 @@ This technique is implemented in a WebGPU compute shader, resulting in an ocean 
 ## 🌊 Underwater Spectral Rendering: Scattering
 
 ### Ocean Data-Informed Multiple Scattering
+We implement the constant-time multiscattering estimation (assuming a near-constant elevation for the ocean surface and floor in the area about a particular fragment) from [Real-time Underwater Spectral Rendering](https://onlinelibrary.wiley.com/doi/epdf/10.1111/cgf.15009).
 
-(FIXME: Nick)
+Data is taken from [an open source paper](https://figshare.com/articles/dataset/Dataset_to_accompany_paper_Depth_profiles_of_Jerlov_water_types/21710252) for 3 different Jerlov water types, each of which classifies a set of different ocean water properties.
+
+Below are a handful of results from different ocean properties:
+
+<img src="img/multi1.png" width="200">
+<img src="img/multi2.png" width="200">
+<img src="img/multi3.png" width="200">
+
+
 
 ### Lighting Effects via Single Scattering
+Similarly, we implement a froxel-based estimation of single scattering (i.e. light that is reflected off a particle of the participating medium once) from the same paper.
 
-(FIXME: Nick)
+TODO: implementation
 
 ## 🪸 Coral Reefs: Generation & placement
 
