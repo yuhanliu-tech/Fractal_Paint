@@ -11,12 +11,16 @@ import { Coral, makeCoral } from './stage/coral';
 import { Camera } from './stage/camera';
 import { Stage } from './stage/stage';
 import { FrameStats } from './stage/framestats';
+import { loadSpectralData, JerlovWaterType, JerlovWaterTypes, SpectralData, SpectralUniforms } from './stage/spectraldata';
 
 await initWebGPU();
 setupLoaders();
 
 let scene = new Scene();
 await scene.loadGltf('./scenes/sponza/Sponza.gltf');
+
+let spectralData = await loadSpectralData('./waterprops/data.json');
+let spectralUniforms = new SpectralUniforms(spectralData);
 
 const camera = new Camera();
 const coral = await makeCoral(camera, './GLTF/wahoo.obj');
@@ -40,7 +44,12 @@ gui.add(frameStats, 'numFrames').name("Num Frames").listen();
 gui.add(frameStats, 'timeElapsed').name("Time Elapsed").listen();
 gui.add(frameStats, 'frameTime').step(0.01).name("ms per frame").listen();
 
-const stage = new Stage(scene, coral, camera, stats, frameStats);
+const waterPropsController = gui.add({ waterType: 'b_IA' }, 'waterType', JerlovWaterTypes).name('Water Type');
+waterPropsController.onChange((value: JerlovWaterType) => {
+    spectralUniforms.setWaterProps(value);
+});
+
+const stage = new Stage(scene, coral, spectralUniforms, camera, stats, frameStats);
 
 var renderer: Renderer | undefined;
 

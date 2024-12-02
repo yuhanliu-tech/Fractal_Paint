@@ -1,4 +1,5 @@
 // CHECKITOUT: code that you add here will be prepended to all shaders
+const PI = 3.14159265358979323846264;
 
 struct Coral {
     pos: vec3f

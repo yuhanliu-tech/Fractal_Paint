@@ -18,7 +18,6 @@ const up: vec3<f32> = vec3<f32>(0.0, 1.0, 0.0); // up
 const fw: vec3<f32> = vec3<f32>(0.0, 0.0, 1.0); // forward
 
 const halfpi: f32 = 1.570796326794896619;
-const pi: f32 = 3.141592653589793238;
 const twopi: f32 = 6.283185307179586;
 
 // parameters to control ray marching 
@@ -83,19 +82,19 @@ fn atan2(y: f32, x: f32) -> f32 {
     } else if x < 0.0 {
         if y >= 0.0 {
             // Second quadrant
-            return atan(y / x) + pi; // Add π
+            return atan(y / x) + PI; // Add π
         } else {
             // Third quadrant
-            return atan(y / x) - pi; // Subtract π
+            return atan(y / x) - PI; // Subtract π
         }
     } else {
         // x == 0.0
         if y > 0.0 {
             // Positive y-axis
-            return (pi/2); // π/2
+            return (PI/2); // π/2
         } else if y < 0.0 {
             // Negative y-axis
-            return -(pi/2); // -π/2
+            return -(PI/2); // -π/2
         } else {
             // Origin (undefined behavior)
             return 0.0; // Default to 0.0
@@ -135,7 +134,7 @@ fn pModPolar(p: vec2<f32>, repetitions: f32, fix: f32) -> vec2<f32> {
     
     // Correct the quadrant manually based on the signs of x and y
     if (p.x < 0.0) {
-        a += pi;
+        a += PI;
     }
     let r: f32 = length(p);
     var c: f32 = floor(a / angle);

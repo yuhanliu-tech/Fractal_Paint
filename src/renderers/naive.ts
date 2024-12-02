@@ -54,7 +54,7 @@ export class NaiveRenderer extends renderer.Renderer {
         this.sceneUniformsBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "scene uniforms bind group layout",
             entries: [
-                { // camera
+                { // camera   // camera
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
@@ -63,6 +63,21 @@ export class NaiveRenderer extends renderer.Renderer {
                     binding: 1,
                     visibility: GPUShaderStage.VERTEX,
                     buffer: { type: "read-only-storage" }
+                },
+                {   // wavelengths
+                    binding: 2,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "uniform" }
+                },
+                {   // water properties
+                    binding: 3,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "uniform" }
+                },
+                {   // wavelength sensitivities
+                    binding: 4,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "uniform" }
                 }
             ]
         });
@@ -78,6 +93,18 @@ export class NaiveRenderer extends renderer.Renderer {
                 { // coralSet
                     binding: 1,
                     resource: { buffer: this.coral.coralSetStorageBuffer }
+                },
+                {
+                    binding: 2,
+                    resource: { buffer: stage.spectralUniforms.wavelengthGPUBuffer }
+                },
+                {
+                    binding: 3,
+                    resource: { buffer: stage.spectralUniforms.waterPropsGPUBuffer }
+                },
+                {
+                    binding: 4,
+                    resource: { buffer: stage.spectralUniforms.sensitivitiesGPUBuffer }
                 }
             ]
         });
@@ -301,7 +328,7 @@ export class NaiveRenderer extends renderer.Renderer {
         this.oceanFloor.computeTextures(encoder, this.oceanFloorChunk);
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
-        /*const renderPass = encoder.beginRenderPass({
+        const renderPass = encoder.beginRenderPass({
             label: "naive render pass",
             colorAttachments: [
                 {
@@ -331,7 +358,7 @@ export class NaiveRenderer extends renderer.Renderer {
             renderPass.drawIndexed(primitive.numIndices);
         });
 
-        renderPass.end();*/
+        renderPass.end();
 
         const coralRenderPass = encoder.beginRenderPass({
             label: "coral render pass",
@@ -339,14 +366,14 @@ export class NaiveRenderer extends renderer.Renderer {
                 {
                     view: this.renderTextureView,
                     clearValue: [0, 0, 0, 0],
-                    loadOp: "clear",
+                    loadOp: "load",
                     storeOp: "store"
                 }
             ],
             depthStencilAttachment: {
                 view: this.depthTextureView,
                 depthClearValue: 1.0,
-                depthLoadOp: "clear",
+                depthLoadOp: "load",
                 depthStoreOp: "store"
             }
         });

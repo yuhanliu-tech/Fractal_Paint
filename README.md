@@ -53,7 +53,13 @@ We use this technique for generating fractalized coral assets, and examples of r
 
 ### Coral Reef Instanced Rendering
 
-(FIXME: Joanna)
+We combined procedural generation with GPU-accelerated instancing to efficiently render a large number of coral instances across an ocean floor terrain.
+
+To ensure an even distribution, a grid spacing technique is used for global placement. Corals are initially placed in a uniform grid, with each cell receiving one coral instance. This systematic approach ensures complete coverage of the terrain while maintaining consistent spacing between corals.
+
+For added realism, a Perlin noise function is applied to each coral's position within its grid cell. This introduces subtle offsets in both the x and z coordinates, breaking up the rigid grid-like appearance and creating a more natural and organic distribution. The y-coordinate (height) of each coral is adjusted based on the terrain's displacement map, ensuring that corals are correctly placed on the undulating ocean floor. The ocean floor terrain is generated using a displacement map similar to the ocean surface to simulate a realistic underwater landscape.
+
+The computed positions, along with other instance-specific attributes like orientation and scale, are stored in a GPU storage buffer. These attributes are then passed to the vertex shader during rendering. GPU instancing allows all corals to share a single model while being uniquely positioned and transformed, significantly reducing the overhead of rendering thousands of individual corals. This approach ensures high performance while maintaining visual complexity, allowing for the creation of large-scale, procedurally generated coral reef environments that move seamlessly with the player's perspective.
 
 (FIXME: instanced coral image)
 

@@ -3,6 +3,7 @@ import { Coral } from './stage/coral';
 import { Camera } from './stage/camera';
 import { Stage } from './stage/stage';
 import { FrameStats } from './stage/framestats';
+import { SpectralUniforms } from './stage/spectraldata';
 
 export var canvas: HTMLCanvasElement;
 export var canvasFormat: GPUTextureFormat;
@@ -103,6 +104,7 @@ export const vertexBufferLayout: GPUVertexBufferLayout = {
 export abstract class Renderer {
     protected scene: Scene;
     protected coral: Coral;
+    protected spectralUniforms: SpectralUniforms;
     protected camera: Camera;
     protected stats: Stats;
 
@@ -113,6 +115,7 @@ export abstract class Renderer {
     constructor(stage: Stage) {
         this.scene = stage.scene;
         this.coral = stage.coral;
+        this.spectralUniforms = stage.spectralUniforms;
         this.camera = stage.camera;
         this.stats = stage.stats;
         this.frameStats = stage.frameStats;
