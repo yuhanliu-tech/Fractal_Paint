@@ -19,7 +19,7 @@ let scene = new Scene();
 await scene.loadGltf('./scenes/sponza/Sponza.gltf');
 
 const camera = new Camera();
-const coral = await makeCoral(camera, './GLTF/seastar.obj');
+const coral = await makeCoral(camera, './GLTF/wahoo.obj');
 
 const stats = new Stats();
 stats.showPanel(0);
