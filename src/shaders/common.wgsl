@@ -2,7 +2,11 @@
 const PI = 3.14159265358979323846264;
 
 struct Coral {
-    pos: vec3f
+    pos: vec3f,
+    rotation: vec3f,
+    scale: f32,
+    color: vec3f
+    
 }
 
 struct CoralSet {

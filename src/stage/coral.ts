@@ -1,8 +1,6 @@
-import { vec3 } from "wgpu-matrix";
 import { device } from "../renderer";
 import * as shaders from '../shaders/shaders';
 import { Camera } from "./camera";
-import { Cube } from "./cube";
 import { ObjLoader } from "./objLoader";
 
 function hash(p: [number, number]): number {
@@ -26,12 +24,11 @@ export async function makeCoral(camera: Camera, url: string) {
 
 export class Coral {
     private camera: Camera;
-    cube: Cube;
     objModel: ObjLoader; // Store the loaded model
     numCoral = 500;
 
     static readonly maxNumCoral = 5000;
-    static readonly numFloatsPerCoral = 8; // vec3f is aligned at 16 byte boundaries
+    static readonly numFloatsPerCoral = 12; // vec3f is aligned at 16 byte boundaries
     static readonly lightIntensity = 0.1;
 
     coralArray = new Float32Array(Coral.maxNumCoral * Coral.numFloatsPerCoral);
@@ -49,7 +46,6 @@ export class Coral {
 
     constructor(camera: Camera, objModel: ObjLoader) {
         this.camera = camera;
-        this.cube = new Cube(2);
 
         // Initialize the model asynchronously
         this.objModel = objModel;
