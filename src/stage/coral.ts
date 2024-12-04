@@ -1,37 +1,34 @@
-import { vec3 } from "wgpu-matrix";
 import { device } from "../renderer";
 import * as shaders from '../shaders/shaders';
 import { Camera } from "./camera";
-import { Cube } from "./cube";
 import { ObjLoader } from "./objLoader";
 
 function hash(p: [number, number]): number {
     // Constants for the dot product
     const k: [number, number] = [127.1, 311.7];
-    
+
     // Compute the dot product
     const dot = p[0] * k[0] + p[1] * k[1];
-    
+
     // Apply sine function and scale
     const value = Math.sin(dot) * 43758.5453;
-    
+
     // Return the fractional part
     return value - Math.floor(value);
 }
 
-export async function makeCoral(camera:Camera, url:string) {
+export async function makeCoral(camera: Camera, url: string) {
     let model = await ObjLoader.load(url);
     return new Coral(camera, model);
 }
 
 export class Coral {
     private camera: Camera;
-    cube: Cube;
     objModel: ObjLoader; // Store the loaded model
     numCoral = 500;
 
     static readonly maxNumCoral = 5000;
-    static readonly numFloatsPerCoral = 8; // vec3f is aligned at 16 byte boundaries
+    static readonly numFloatsPerCoral = 12; // vec3f is aligned at 16 byte boundaries
     static readonly lightIntensity = 0.1;
 
     coralArray = new Float32Array(Coral.maxNumCoral * Coral.numFloatsPerCoral);
@@ -43,45 +40,44 @@ export class Coral {
     placeCoralComputeBindGroup: GPUBindGroup;
     placeCoralComputePipeline: GPUComputePipeline;
 
-    vertexBuffer: GPUBuffer; 
-    indexBuffer: GPUBuffer; 
+    vertexBuffer: GPUBuffer;
+    indexBuffer: GPUBuffer;
     indexCount: number = 0;
 
     constructor(camera: Camera, objModel: ObjLoader) {
         this.camera = camera;
-        this.cube = new Cube(2);
 
         // Initialize the model asynchronously
         this.objModel = objModel;
 
         // interleave VBOS ------------------------------------
-
-        const positions = this.objModel.vertices; // Assuming this is Float32Array of position data
-        const normals = this.objModel.normals;
-        const uvs = new Float32Array((positions.length / 3) * 2); // Placeholder UVs
-        const interleavedData = new Float32Array(positions.length + normals.length + uvs.length);
+        const interleavedData = new Float32Array(this.objModel.mesh.vertices.length * 8);
 
         // Interleave the data
-        // I'm scaling the positions here, I'll fix this later
+        let index = 0;
+        this.objModel.mesh.vertices.forEach((vertex) => {
+            const position = vertex.position;
+            const normal = vertex.normal;
+            const uv = vertex.uv;
 
-        for (let i = 0, j = 0; i < positions.length / 3; i++) {
-            let scale = hash([positions[i * 3], positions[i * 3 + 2]]) * 20; // don't use this for now
-            interleavedData[j++] = positions[i * 3] * 20;     // x
-            interleavedData[j++] = positions[i * 3 + 1] * 20; // y
-            interleavedData[j++] = positions[i * 3 + 2] * 20; // z
-            interleavedData[j++] = normals[i * 3];       // nx (placeholder)
-            interleavedData[j++] = normals[i * 3 + 1];   // ny (placeholder)
-            interleavedData[j++] = normals[i * 3 + 2];   // nz (placeholder)
-            interleavedData[j++] = uvs[i * 2];           // u (placeholder)
-            interleavedData[j++] = uvs[i * 2 + 1];       // v (placeholder)
-        }
+            interleavedData[index++] = position[0];
+            interleavedData[index++] = position[1];
+            interleavedData[index++] = position[2];
+            interleavedData[index++] = normal[0];
+            interleavedData[index++] = normal[1];
+            interleavedData[index++] = normal[2];
+            interleavedData[index++] = uv[0];
+            interleavedData[index++] = uv[1];
+        });
+
+        const indices = new Uint32Array(this.objModel.mesh.facesIndex);
 
         // ----------------------------------------------------
 
         this.vertexBuffer = device.createBuffer({
             label: "coral vertex buffer",
             size: interleavedData.byteLength,
-            usage: GPUBufferUsage.VERTEX  | GPUBufferUsage.COPY_DST,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
             mappedAtCreation: true,
         });
         new Float32Array(this.vertexBuffer.getMappedRange()).set(interleavedData);
@@ -90,15 +86,15 @@ export class Coral {
 
         this.indexBuffer = device.createBuffer({
             label: "coral index buffer",
-            size: this.objModel.indices.byteLength,
+            size: indices.byteLength,
             usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
             mappedAtCreation: true,
         });
-        new Uint32Array(this.indexBuffer.getMappedRange()).set(this.objModel.indices);
+        new Uint32Array(this.indexBuffer.getMappedRange()).set(indices);
         this.indexBuffer.unmap();
-        device.queue.writeBuffer(this.indexBuffer, 0, this.objModel.indices);
+        device.queue.writeBuffer(this.indexBuffer, 0, indices);
 
-        this.indexCount = this.objModel.indices.length;
+        this.indexCount = indices.length;
 
         //----
 

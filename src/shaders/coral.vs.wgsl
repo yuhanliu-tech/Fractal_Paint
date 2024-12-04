@@ -1,5 +1,5 @@
 @group(0) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
-@group(0) @binding(1) var<storage, read> instancePositions: array<vec3f>;
+@group(0) @binding(1) var<storage, read> coralSet: CoralSet;
 @group(1) @binding(0) var displacementMap: texture_2d<f32>;
 
 struct VertexInput {
@@ -10,7 +10,36 @@ struct VertexInput {
 
 struct VertexOutput {
     @builtin(position) position: vec4f, // Clip-space position
-    @location(0) normal: vec3f          // Normal vector
+    @location(0) normal: vec3f,          // Normal vector
+    @location(1) color: vec3f        // Color  
+}
+
+// Helper function to create a rotation matrix from Euler angles
+fn rotationMatrix(rotation: vec3f) -> mat3x3f {
+    let sinX = sin(rotation.x);
+    let cosX = cos(rotation.x);
+    let sinY = sin(rotation.y);
+    let cosY = cos(rotation.y);
+    let sinZ = sin(rotation.z);
+    let cosZ = cos(rotation.z);
+
+    let rotX = mat3x3f(
+        vec3f(1.0, 0.0, 0.0),
+        vec3f(0.0, cosX, -sinX),
+        vec3f(0.0, sinX, cosX)
+    );
+    let rotY = mat3x3f(
+        vec3f(cosY, 0.0, sinY),
+        vec3f(0.0, 1.0, 0.0),
+        vec3f(-sinY, 0.0, cosY)
+    );
+    let rotZ = mat3x3f(
+        vec3f(cosZ, -sinZ, 0.0),
+        vec3f(sinZ, cosZ, 0.0),
+        vec3f(0.0, 0.0, 1.0)
+    );
+
+    return rotZ * rotY * rotX; // ZYX order
 }
 
 @vertex
@@ -18,7 +47,10 @@ fn main(input: VertexInput, @builtin(instance_index) instanceIndex: u32) -> Vert
     var output: VertexOutput;
     
     // Fetch the instance position from the storage buffer
-    var instancePosition = instancePositions[instanceIndex];
+    var instancePosition = coralSet.coral[instanceIndex].pos;
+    var instanceRotation = coralSet.coral[instanceIndex].rotation;
+    var instanceScale = coralSet.coral[instanceIndex].scale;
+    var instanceColor = coralSet.coral[instanceIndex].color;
 
     // Displacement map size
     let mapSize: f32 = 1024.0;
@@ -33,12 +65,17 @@ fn main(input: VertexInput, @builtin(instance_index) instanceIndex: u32) -> Vert
     instancePosition.y = f32(displacement) * 10 - 58;
     instancePosition.z = instancePosition.z - 512;
 
+    let scaledPosition = input.position * instanceScale;
+    let rotationMat = rotationMatrix(instanceRotation);
+    let rotatedPosition = rotationMat * scaledPosition;
+
     // Compute the world position of the vertex
-    let worldPosition = input.position + instancePosition;
+    let worldPosition = rotatedPosition + instancePosition;
 
     // Project to clip space
     output.position = cameraUniforms.viewProj * vec4f(worldPosition, 1.0);
     output.normal = input.normal;
+    output.color = instanceColor;
 
     return output;
 }

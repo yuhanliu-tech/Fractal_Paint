@@ -68,7 +68,7 @@ export class SpectralUniforms {
             this.wavelengthFloatView[i * 4 + 1] = spectralData.wavelengthWeights[i];
         }
         device.queue.writeBuffer(this.wavelengthGPUBuffer, 0, this.wavelengthBuffer);
-        
+
         this.waterPropsBuffer = new ArrayBuffer(this.numWavelengths * 4 * 4);
         this.waterPropsFloatView = new Float32Array(this.waterPropsBuffer);
         this.waterPropsGPUBuffer = device.createBuffer({
@@ -104,7 +104,6 @@ export class SpectralUniforms {
 
     setSensitivities(sensitivityType: SensitivityType) {
         let sensitivities = this.spectralData.sensitivities[sensitivityType].map(([r, g, b]) => [r, g, b, 1]).flat();
-        console.log(sensitivities);
         this.sensitivitiesFloatView.set(sensitivities);
         device.queue.writeBuffer(this.sensitivitiesGPUBuffer, 0, this.sensitivitiesBuffer);
     }
