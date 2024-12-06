@@ -61,7 +61,8 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let cellSize = 100.0; // Each cell is 2 units wide and tall
 
     // Calculate base position in the grid
-    let x = f32(coralIdx % u32(gridSize));
+    let x = f32(fract(f32(coralIdx) / gridSize) * gridSize);
+    //let x = f32(coralIdx % u32(gridSize));
     let z = f32(coralIdx / u32(gridSize));
 
     // Add noise for natural placement
@@ -79,5 +80,6 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     // Assign random rotation and scale for variation
     coralSet.coral[coralIdx].rotation = vec3f(0.0, perlin3(coralIdx, 0.0).y * 360.0, 0.0);
     coralSet.coral[coralIdx].scale = 40.0 * (perlin3(coralIdx, 0.0).x * 0.5 + 0.5);
-    coralSet.coral[coralIdx].color = perlin3(coralIdx, 0.0) * 0.5 + 0.5;
+    let noise = perlin3(coralIdx, 0.0) * 0.5 + 0.5;
+    coralSet.coral[coralIdx].color = vec3f(noise.x * 0.8 + 0.2, noise.y * 0.5, noise.z * 0.3);
 }

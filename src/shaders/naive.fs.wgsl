@@ -28,7 +28,7 @@ struct FragmentInput
     @location(2) uv: vec2f
 }
 
-const SUN_STRENGTH = 10.0;
+const SUN_STRENGTH = 20.0;
 
 fn upsampleAlbedo(
     albedo: vec3f,
@@ -106,7 +106,6 @@ fn multipleScatteringIrradiance(
     let y_w = -direction.y;
     var totalIrradiance = vec3f();
     for (var i = 0u; i < numWavelengths; i++) {
-        let wavelength = wavelengths[i].value;
         let props = waterProperties[i];
 
         let c = props.k_d * y_w - props.sigma_t;
@@ -137,12 +136,11 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     let direction = normalize(vector);
     let distance = length(vector);
 
-    // TODO: fix multiple scattering
-    // irradiance += multipleScatteringIrradiance(
-    //     depth,
-    //     direction,
-    //     distance
-    // );
+    irradiance += multipleScatteringIrradiance(
+        depth,
+        direction,
+        distance
+    );
 
     return vec4(irradiance.xyz, 1);
 }
