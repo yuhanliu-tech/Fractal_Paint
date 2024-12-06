@@ -25,7 +25,7 @@ export async function makeCoral(camera: Camera, url: string) {
 export class Coral {
     private camera: Camera;
     objModel: ObjLoader; // Store the loaded model
-    numCoral = 500;
+    numCoral = 100;
 
     static readonly maxNumCoral = 5000;
     static readonly numFloatsPerCoral = 12; // vec3f is aligned at 16 byte boundaries

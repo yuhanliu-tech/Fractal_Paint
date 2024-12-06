@@ -62,7 +62,7 @@ fn main(input: VertexInput, @builtin(instance_index) instanceIndex: u32) -> Vert
     let displacement = textureLoad(displacementMap, vec2<i32>(i32(localSampleX), i32(localSampleZ)), 0).x;
 
     instancePosition.x = instancePosition.x - 512;
-    instancePosition.y = f32(displacement) * 10 - 58;
+    instancePosition.y = f32(displacement) * 10 - 110;
     instancePosition.z = instancePosition.z - 512;
 
     let scaledPosition = input.position * instanceScale;
