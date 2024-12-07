@@ -69,7 +69,7 @@ function setRenderer(mode: string) {
 }
 
 const renderModes = { naive: 'naive', forwardPlus: 'forward+', clusteredDeferred: 'clustered deferred' };
-let renderModeController = gui.add({ mode: renderModes.naive }, 'mode', renderModes);
-renderModeController.onChange(setRenderer);
+//let renderModeController = gui.add({ mode: renderModes.naive }, 'mode', renderModes);
+//renderModeController.onChange(setRenderer);
 
-setRenderer(renderModeController.getValue());
+setRenderer('naive');
