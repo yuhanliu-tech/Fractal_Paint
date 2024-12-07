@@ -24,6 +24,7 @@ import oceanFloorVertRaw from './ocean_floor.vs.wgsl?raw';
 import oceanFloorFragRaw from './ocean_floor.fs.wgsl?raw';
 import oceanFloorComputeRaw from './ocean_floor.cs.wgsl?raw';
 
+import scatteringRaw from './scattering.wgsl?raw';
 import spawnCoralComputeRaw from './spawn_coral.cs.wgsl?raw';
 import coralVertRaw from './coral.vs.wgsl?raw';
 import coralFragRaw from './coral.fs.wgsl?raw';
@@ -64,7 +65,7 @@ function processShaderRaw(raw: string) {
 }
 
 export const naiveVertSrc: string = processShaderRaw(naiveVertRaw);
-export const naiveFragSrc: string = processShaderRaw(naiveFragRaw);
+export const naiveFragSrc: string = processShaderRaw(scatteringRaw) + evalShaderRaw(naiveFragRaw);
 
 export const forwardPlusFragSrc: string = processShaderRaw(forwardPlusFragRaw);
 
@@ -87,4 +88,4 @@ export const oceanFloorComputeSrc: string = processShaderRaw(oceanFloorComputeRa
 
 export const placeCoralComputeSrc: string = processShaderRaw(spawnCoralComputeRaw);
 export const coralVertSrc: string = processShaderRaw(coralVertRaw);
-export const coralFragSrc: string = processShaderRaw(coralFragRaw);
+export const coralFragSrc: string = processShaderRaw(scatteringRaw) + evalShaderRaw(coralFragRaw);
