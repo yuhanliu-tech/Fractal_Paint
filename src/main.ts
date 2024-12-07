@@ -23,7 +23,7 @@ let spectralData = await loadSpectralData('./waterprops/data.json');
 let spectralUniforms = new SpectralUniforms(spectralData);
 
 const camera = new Camera();
-const coral = await makeCoral(camera, './GLTF/seastar.obj'); // wahoo, seastar
+const coral = await makeCoral(camera, './GLTF/coralobj.obj'); // wahoo, seastar
 
 const stats = new Stats();
 stats.showPanel(0);
