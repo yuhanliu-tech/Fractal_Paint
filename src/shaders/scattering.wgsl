@@ -50,18 +50,24 @@ fn aces_tonemap(color: vec3<f32>) -> vec3<f32> {
 const SUN_STRENGTH = 10.0;
 const DIST_SCALE = 0.05;
 
+const CAMERA_POINT_LIGHT_STRENGTH = 1.0;
+
 fn totalIrradiance(
     origin: vec3f,
     pos: vec3f,
     nor: vec3f,
     albedo: vec3f
 ) -> vec3f {
+    // return albedo;
     let depth = origin.y * DIST_SCALE;
     let vector = origin - pos;
     let direction = normalize(vector);
     let distance = length(vector) * DIST_SCALE;
 
-    var irradiance = directSunIrradiance(depth, distance, nor, albedo);
+    var irradiance = vec3(0.f);
+
+    irradiance += directSunIrradiance(depth, distance, nor, albedo);
+    irradiance += cameraPointLightIrradiance(depth, distance, direction, nor, albedo);
 
     irradiance += multipleScatteringIrradiance(
         depth,
@@ -69,7 +75,7 @@ fn totalIrradiance(
         distance
     );
 
-    return irradiance;
+    return aces_tonemap(irradiance);
 }
 
 fn upsampleAlbedo(
@@ -85,6 +91,35 @@ fn upsampleAlbedo(
     } else {
         return albedo.r;
     }
+}
+
+fn cameraPointLightIrradiance(
+    depth: f32,
+    distance: f32,
+    direction: vec3f,
+    nor: vec3f,
+    albedo: vec3f
+) -> vec3f {
+    // TODO: maybe do something a bit more physically motivated?
+    // Maybe just a lambert term with a static sun direction?
+    // let diffuse = sqrt(clamp(0.5 + 0.5 * nor.y, 0, 1));
+    let diffuse = max(dot(nor, lightDirection), 0.3);
+
+    // TODO: caustics known from surface radiance
+    
+    var totalIrradiance = vec3f();
+
+    for (var i = 0u; i < numWavelengths; i++) {
+        let wavelength = wavelengths[i].value;
+        let props = waterProperties[i];
+
+        let directExtinction = exp(-props.sigma_t * distance);
+
+        let irradiance = (upsampleAlbedo(albedo, wavelength) * diffuse) * CAMERA_POINT_LIGHT_STRENGTH * directExtinction;
+        totalIrradiance += irradiance * wavelengths[i].weight * sensitivities[i];
+    }
+
+    return totalIrradiance / (300 * distance * distance);
 }
 
 fn directSunIrradiance(
