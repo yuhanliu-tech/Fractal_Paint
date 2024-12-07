@@ -47,10 +47,10 @@ fn aces_tonemap(color: vec3<f32>) -> vec3<f32> {
   return result;  
 }
 
-const SUN_STRENGTH = 10.0;
-const DIST_SCALE = 0.05;
+const SUN_STRENGTH = 4.0;
+const DIST_SCALE = 0.01;
 
-const CAMERA_POINT_LIGHT_STRENGTH = 1.0;
+const CAMERA_POINT_LIGHT_STRENGTH = 0.2;
 
 fn totalIrradiance(
     origin: vec3f,
@@ -76,6 +76,20 @@ fn totalIrradiance(
     );
 
     return aces_tonemap(irradiance);
+}
+
+fn computeGaussian(
+    x: f32,
+    sigma: f32
+) -> f32 {
+    return exp(-x * x / (2 * sigma * sigma));
+}
+
+fn upsampleHack(
+    albedo: vec3f,
+    wavelengthIndex: u32
+) -> f32{
+    return dot(albedo, sensitivities[wavelengthIndex]);
 }
 
 fn upsampleAlbedo(
@@ -104,22 +118,7 @@ fn cameraPointLightIrradiance(
     // Maybe just a lambert term with a static sun direction?
     // let diffuse = sqrt(clamp(0.5 + 0.5 * nor.y, 0, 1));
     let diffuse = max(dot(nor, lightDirection), 0.3);
-
-    // TODO: caustics known from surface radiance
-    
-    var totalIrradiance = vec3f();
-
-    for (var i = 0u; i < numWavelengths; i++) {
-        let wavelength = wavelengths[i].value;
-        let props = waterProperties[i];
-
-        let directExtinction = exp(-props.sigma_t * distance);
-
-        let irradiance = (upsampleAlbedo(albedo, wavelength) * diffuse) * CAMERA_POINT_LIGHT_STRENGTH * directExtinction;
-        totalIrradiance += irradiance * wavelengths[i].weight * sensitivities[i];
-    }
-
-    return totalIrradiance / (300 * distance * distance);
+    return CAMERA_POINT_LIGHT_STRENGTH * diffuse * albedo / distance / distance;
 }
 
 fn directSunIrradiance(
