@@ -64,8 +64,10 @@ function processShaderRaw(raw: string) {
     return commonSrc + evalShaderRaw(raw);
 }
 
+const scatteringSrc: string = processShaderRaw(scatteringRaw);
+
 export const naiveVertSrc: string = processShaderRaw(naiveVertRaw);
-export const naiveFragSrc: string = processShaderRaw(scatteringRaw) + evalShaderRaw(naiveFragRaw);
+export const naiveFragSrc: string = scatteringSrc + evalShaderRaw(naiveFragRaw);
 
 export const forwardPlusFragSrc: string = processShaderRaw(forwardPlusFragRaw);
 
@@ -83,9 +85,9 @@ export const jellyfishFragSrc: string = processShaderRaw(jellyfishFragRaw);
 export const fullscreenVertSrc: string = processShaderRaw(fullScreenVertRaw);
 
 export const oceanFloorVertSrc: string = processShaderRaw(oceanFloorVertRaw);
-export const oceanFloorFragSrc: string = processShaderRaw(oceanFloorFragRaw);
+export const oceanFloorFragSrc: string = scatteringSrc + evalShaderRaw(oceanFloorFragRaw);
 export const oceanFloorComputeSrc: string = processShaderRaw(oceanFloorComputeRaw);
 
 export const placeCoralComputeSrc: string = processShaderRaw(spawnCoralComputeRaw);
 export const coralVertSrc: string = processShaderRaw(coralVertRaw);
-export const coralFragSrc: string = processShaderRaw(scatteringRaw) + evalShaderRaw(coralFragRaw);
+export const coralFragSrc: string = scatteringSrc + evalShaderRaw(coralFragRaw);

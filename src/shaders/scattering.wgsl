@@ -18,7 +18,35 @@ struct WaterProperties {
 @group(0) @binding(3) var<uniform> waterProperties: array<WaterProperties, numWavelengths>;
 @group(0) @binding(4) var<uniform> sensitivities: array<vec3f, numWavelengths>;
 
-const lightDirection = normalize(vec3f(0.5, 1.0, 0.5));
+const lightDirection = normalize(vec3(-0.2 , 0.6 + sin(20) * 0.15 , 1.0));
+
+fn getSun(dir: vec3<f32>) -> f32 { 
+  return pow(max(0.0, dot(dir, lightDirection)), 70.0) * 60.0;
+}
+
+fn aces_tonemap(color: vec3<f32>) -> vec3<f32> {  
+  let m1 = mat3x3(
+    0.59719, 0.07600, 0.02840,
+    0.35458, 0.90834, 0.13383,
+    0.04823, 0.01566, 0.83777
+  );
+  let m2 = mat3x3(
+    1.60475, -0.10208, -0.00327,
+    -0.53108,  1.10813, -0.07276,
+    -0.07367, -0.00605,  1.07602
+  );
+  let v = m1 * color;  
+  let a = v * (v + 0.0245786) - 0.000090537;
+  let b = v * (0.983729 * v + 0.4329510) + 0.238081;
+
+  var result = m2 * (a / b);
+  result.x = pow(min(max(result.x, 0.f), 1.f), 1.0/2.2);
+  result.y = pow(min(max(result.y, 0.f), 1.f), 1.0/2.2);
+  result.z = pow(min(max(result.z, 0.f), 1.f), 1.0/2.2);
+
+  return result;  
+}
+
 const SUN_STRENGTH = 10.0;
 const DIST_SCALE = 0.05;
 
