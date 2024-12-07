@@ -74,6 +74,8 @@ fn main(input: VertexInput, @builtin(instance_index) instanceIndex: u32) -> Vert
 
     // Project to clip space
     output.position = cameraUniforms.viewProj * vec4f(worldPosition, 1.0);
+    output.position.y += 6;
+
     output.normal = input.normal;
     output.color = instanceColor;
 
