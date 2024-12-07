@@ -97,7 +97,8 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     var C = fresnel * reflection + scattering;
     C += 0.2;
 
-    let color = mix(oceanColor + C * 0.1, fogColor, fogFactor);
+    //let color = mix(oceanColor + C * 0.1, fogColor, fogFactor);
+    let color = oceanColor + C * 0.1;
 
     // combine lighting results
     return vec4f(color, 1.0);

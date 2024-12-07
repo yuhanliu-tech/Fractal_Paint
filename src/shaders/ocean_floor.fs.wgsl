@@ -30,6 +30,11 @@ fn getRay(coord: vec2<f32>) -> vec3<f32> {
     * proj;
 }
 
+fn hash(p: vec2<f32>) -> f32 {
+    // Simple hash function to generate pseudo-random noise
+    let k = vec2<f32>(127.1, 311.7);
+    return fract(sin(dot(p, k)) * 43758.5453123);
+}
 
 // Adjust this value to control how far the fog extends
 const fogDistance: f32 = 550.0;
@@ -41,13 +46,20 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     // not cursed texture sampling for ocean color :)
     let uv = vec2f(in.texCoord) / 1024;
     let normal = textureSample(normalMap, texSampler, uv);
-    let oceanColor = vec3<f32>(normal.x * 0.5, normal.a * 0.35, 0.3); // ocean albedo with calculated normals from compute shader
+
+    var sandColor = vec3<f32>(0.65, 0.65, 0.6);
+    let stipple = hash(uv);           // Generate noise
+    sandColor *= 0.9 + 0.1 * stipple; // Blend noise with sand color
+
+    let lightDir = normalize(vec3<f32>(0.5, 1.0, 0.5)); // Adjust as needed
+    let shading = max(dot(normal.xyz, lightDir), 0.0);
+    sandColor *= mix(sandColor, vec3(1.f,1.f,1.f), pow(shading, 2));
 
     let color = totalIrradiance(
         cameraUniforms.cameraPos.xyz,
         in.pos,
         normal.xyz,
-        oceanColor
+        sandColor
     );
 
     // ocean color with lighting considerations
@@ -74,6 +86,6 @@ fn main(in: FragmentInput) -> @location(0) vec4f
 
     // let color = mix(oceanColor + C * 0.18, fogColor, fogFactor);
 
-    // combine lighting results
+
     return vec4f(color, 1.0);
 }
