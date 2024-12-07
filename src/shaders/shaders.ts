@@ -81,7 +81,7 @@ export const oceanSurfaceVertSrc: string = processShaderRaw(oceanSurfaceVertRaw)
 export const oceanSurfaceFragSrc: string = processShaderRaw(oceanSurfaceFragRaw);
 export const oceanSurfaceComputeSrc: string = processShaderRaw(oceanSurfaceComputeRaw);
 
-export const jellyfishFragSrc: string = processShaderRaw(jellyfishFragRaw);
+export const jellyfishFragSrc: string = scatteringSrc + evalShaderRaw(jellyfishFragRaw);
 export const fullscreenVertSrc: string = processShaderRaw(fullScreenVertRaw);
 
 export const oceanFloorVertSrc: string = processShaderRaw(oceanFloorVertRaw);

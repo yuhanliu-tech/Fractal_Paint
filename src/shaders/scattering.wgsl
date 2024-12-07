@@ -48,7 +48,7 @@ fn aces_tonemap(color: vec3<f32>) -> vec3<f32> {
 }
 
 const SUN_STRENGTH = 4.0;
-const DIST_SCALE = 0.01;
+const DIST_SCALE = 0.03;
 
 const CAMERA_POINT_LIGHT_STRENGTH = 0.2;
 

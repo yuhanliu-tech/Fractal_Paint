@@ -1,5 +1,3 @@
-@group(${bindGroup_scene}) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
-
 @group(1) @binding(0) var<uniform> time: f32;
 @group(1) @binding(1) var colorTexture : texture_2d<f32>;
 @group(1) @binding(2) var depthTexture : texture_2d<f32>; // we don't need this?
@@ -547,21 +545,10 @@ fn render(uv: vec2<f32>, camRay: Ray, bg: vec3<f32>, accent: vec3<f32>) -> vec3<
 
 @fragment
 fn main(in: FragmentInput) -> @location(0) vec4f {
-
-    // setup UVs
-    let index = vec2u(in.fragPos.xy);
-
-    var bg = textureLoad(colorTexture, index, 0).xyz; // background is previous pass
-    //bg = vec3<f32>(0.1, 0.5, 0.6); // solid background
-
     var uv: vec2<f32> = in.texCoord;
     uv -= 0.5;
 
-    //var t = 0.4f * time;
-    var accent = mix(accentColor1, accentColor2, sin(15.456));
-
     // camera setup ----------------------
-
     let camPos = cameraUniforms.cameraPos.xyz;
     let camForward = normalize(cameraUniforms.cameraLookPos.xyz - camPos);
     let camLeft = -normalize(cross(up, camForward));
@@ -573,6 +560,23 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     camRay.o = camPos;                      // ray origin = camera position
     camRay.d = normalize(cami - camPos);   // ray direction is the vector from the cam pos through the point on the imaginary screen
     // end camera setup -------------------
+    
+    // setup UVs
+    let index = vec2u(in.fragPos.xy);
+    let depth = camPos.y * DIST_SCALE;
+    
+    var bg = select(
+        textureLoad(colorTexture, index, 0).xyz,
+        aces_tonemap(multipleScatteringIrradiance(depth, -camRay.d, 1024)),
+        textureLoad(depthTexture, index, 0).x == 1.0); // background is previous pass
+    //bg = vec3<f32>(0.1, 0.5, 0.6); // solid background
+
+    
+
+    //var t = 0.4f * time;
+    var accent = mix(accentColor1, accentColor2, sin(15.456));
+
+
     
     var col: vec3<f32> = render(uv, camRay, bg, accent); // entry-point into jellyfish rendering
     
