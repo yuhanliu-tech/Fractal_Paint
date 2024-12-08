@@ -4,7 +4,7 @@ import * as shaders from '../shaders/shaders';
 
 export class CoralChunk {
     static readonly maxNumCoral = 5000;
-    static readonly numCoral = 50;
+    static readonly numCoral = 250;
     static readonly numFloatsPerCoral = 12;
     static readonly chunkSize = 1024;
 
@@ -28,14 +28,14 @@ export class CoralChunk {
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         });
         // FIXME: Don't hardcode number of coral
-        device.queue.writeBuffer(this.coralSet, 0, new Uint32Array([CoralChunk.numCoral]));
+        device.queue.writeBuffer(this.coralSet, 0, new Uint32Array([CoralChunk.maxNumCoral]));
 
         let centerBuffer = device.createBuffer({
             label: "Coral chunk center buffer",
             size: 4 * 2,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
-        device.queue.writeBuffer(centerBuffer, 0, new Uint32Array([center[0], center[1]]));
+        device.queue.writeBuffer(centerBuffer, 0, new Float32Array([center[0], center[1]]));
 
         this.computeBindGroup = device.createBindGroup({
             label: "place coral compute bind group",

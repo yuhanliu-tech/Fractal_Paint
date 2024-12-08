@@ -24,7 +24,7 @@ let spectralData = await loadSpectralData('./waterprops/data.json');
 let spectralUniforms = new SpectralUniforms(spectralData);
 
 const camera = new Camera();
-const coral = await makeCoral(['./GLTF/coralobj.obj', './GLTF/seastar.obj', './GLTF/hemisphere.obj', './GLTF/portalcoral.obj']); // wahoo, seastar
+const coral = await makeCoral(['./GLTF/coralobj.obj', './GLTF/seastar.obj', './GLTF/hemisphere.obj', './GLTF/portalcoral.obj', './GLTF/branch.obj']); // wahoo, seastar
 const coralChunk = new CoralChunk(coral, [0, 0]);
 
 const stats = new Stats();

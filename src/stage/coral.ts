@@ -16,7 +16,6 @@ export class Coral {
         instanceCount: number;
     }[] = []; // Array to store different coral types
 
-    numCoral = 100;
     camPosUniformBuffer: GPUBuffer;
 
     placeCoralComputeBindGroupLayout: GPUBindGroupLayout;

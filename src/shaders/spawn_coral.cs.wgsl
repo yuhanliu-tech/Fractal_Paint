@@ -54,8 +54,8 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     }
     
     // Calculate grid size dynamically based on numCoral
-    let gridSize = ceil(sqrt(f32(coralSet.numCoral))); // Ensure enough cells to fit all corals
-    let cellSize = 20.0; // Each cell is 2 units wide and tall
+    let gridSize = ceil(sqrt(f32(100.0))); // Ensure enough cells to fit all corals
+    let cellSize = 40.0; // Each cell is 2 units wide and tall
 
     let adjustedIdx = u32(fract(f32(coralIdx) / 50.0) * 50.0); // mod based on the num of each coral drawn
 
@@ -69,9 +69,9 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
 
     // Terrain placement: Generate a 3D position
     let terrainPosition = vec3f(
-        x * cellSize + noiseOffset.x, // X: distribute corals horizontally
+        x * cellSize + noiseOffset.x + world_position.x, // X: distribute corals horizontally
         0.0,                              // Y: ground level (add elevation in vs shader)
-        z * cellSize + noiseOffset.z   // Z: distribute corals vertically
+        z * cellSize + noiseOffset.z + world_position.y  // Z: distribute corals vertically
     );
     
     //let noiseOffset = perlin(vec2f(terrainPosition.x, terrainPosition.z) * 0.1) * 0.5; // Scale noise
