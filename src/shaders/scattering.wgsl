@@ -17,6 +17,7 @@ struct WaterProperties {
 @group(0) @binding(1) var<uniform> wavelengths: array<Wavelength, numWavelengths>;
 @group(0) @binding(2) var<uniform> waterProperties: array<WaterProperties, numWavelengths>;
 @group(0) @binding(3) var<uniform> sensitivities: array<vec3f, numWavelengths>;
+@group(0) @binding(4) var<uniform> time: f32;
 
 const lightDirection = normalize(vec3(-0.2 , 0.6 + sin(20) * 0.15 , 1.0));
 
@@ -59,10 +60,17 @@ fn totalIrradiance(
     albedo: vec3f
 ) -> vec3f {
     // return albedo;
-    let depth = origin.y * DIST_SCALE;
+    var depth = origin.y;
     let vector = origin - pos;
     let direction = normalize(vector);
-    let distance = length(vector) * DIST_SCALE;
+    var distance = length(vector);
+
+    let surface_point = pos + lightDirection * depth / lightDirection.y;
+
+    let intensity = tiledCaustic(surface_point.xz * 0.005, 0);
+    return vec3(intensity);
+    depth *= DIST_SCALE;
+    distance *= DIST_SCALE;
 
     var irradiance = vec3(0.f);
 
@@ -76,20 +84,6 @@ fn totalIrradiance(
     );
 
     return aces_tonemap(irradiance);
-}
-
-fn computeGaussian(
-    x: f32,
-    sigma: f32
-) -> f32 {
-    return exp(-x * x / (2 * sigma * sigma));
-}
-
-fn upsampleHack(
-    albedo: vec3f,
-    wavelengthIndex: u32
-) -> f32{
-    return dot(albedo, sensitivities[wavelengthIndex]);
 }
 
 fn upsampleAlbedo(
@@ -169,4 +163,23 @@ fn multipleScatteringIrradiance(
         totalIrradiance += irradiance * wavelengths[i].weight * sensitivities[i];
     }
     return totalIrradiance / 300;
+}
+
+fn tiledCaustic(point : vec2f, time: f32) -> f32 {
+    const MAX_ITER = 10;
+    const TAU = 6.28318530718;
+
+    var p = (point * TAU) % TAU - 250.0;
+    var i = p;
+    var c = 1.0;
+    var inten = 0.005;
+
+    for (var n = 0u; n < MAX_ITER; n++) {
+        let t = time * (1.0 - (3.5 / f32(n + 1)));
+        i = p + vec2f(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
+        c += 1.0 / length(vec2f(p.x / (sin(i.x + t) / inten), p.y / (cos(i.y + t) / inten)));
+    }
+    c /= f32(MAX_ITER);
+    c = 1.17 - pow(c, 1.4);
+    return (pow(abs(c), 8.0));
 }

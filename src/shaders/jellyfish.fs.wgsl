@@ -1,7 +1,5 @@
-@group(1) @binding(0) var<uniform> time: f32;
-@group(1) @binding(1) var colorTexture : texture_2d<f32>;
-@group(1) @binding(2) var depthTexture : texture_2d<f32>; // unused
-@group(1) @binding(3) var<uniform> world_position: vec2f;
+@group(1) @binding(0) var colorTexture : texture_2d<f32>;
+@group(1) @binding(1) var depthTexture : texture_2d<f32>; // unused
 
 // reference: https://www.shadertoy.com/view/McGcWW
 
