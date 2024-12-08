@@ -331,7 +331,7 @@ fn CastRay(r: Ray) -> DE {
     var p: vec3<f32>; // current pos along ray
     var q: RC; // repetition cell data
     var t: f32 = time;
-    var grid: vec3<f32> = vec3<f32>(5.0, 50.0, 50.0); // grid size for repeating jellies in scene
+    var grid: vec3<f32> = vec3<f32>(5.0, 100.0, 100.0); // grid size for repeating jellies in scene
     //var grid: vec3<f32> = vec3<f32>(5.0, 180.0, 180.0); 
     
     // ray marching loop
