@@ -1,6 +1,8 @@
 #ifndef MC_H
 #define MC_H
 
+#define kernel 1
+
 #include <mutex>
 #include <vector>
 #include <cmath>
@@ -47,16 +49,6 @@ namespace MC
     static uint defaultVerticeArraySize  = 100000;
     static uint defaultNormalArraySize   = 100000;
     static uint defaultTriangleArraySize = 400000;
-
-    static inline uint mc_internalToIndex1D(uint i, uint j, uint k, const VEC3I& size)
-    {
-        return (k * size.y() + j) * size.x() + i;
-    }
-
-    static inline uint mc_internalToIndex1DSlab(uint i, uint j, uint k, const VEC3I& size)
-    {
-        return size.x() * size.y() * (k % 2) + j * size.x() + i;
-    }
 
     // Look-up table for triangle configurations
     static const unsigned long long mc_internalMarching_cube_tris[256] =
@@ -167,7 +159,7 @@ namespace MC
 
         VEC3F v = VEC3F(x, y, z) + offset;
         // v[axis] += va / (va - vb);
-        slab_inds[mc_internalToIndex1DSlab(x, y, z, size)][axis] = uint(mesh.vertices.size());
+        slab_inds[cuda_internalToIndex1DSlab(x, y, z, size)][axis] = uint(mesh.vertices.size());
         mesh.vertices.push_back(v);
         mesh.normals.push_back(VEC3F(0, 0, 0));
     }
@@ -179,7 +171,7 @@ namespace MC
 
         VEC3F v = dev_internalComputeEdge(slab_inds, mesh, grid, va, vb, axis, x, y, z, size);
 
-        slab_inds[mc_internalToIndex1DSlab(x, y, z, size)][axis] = uint(mesh.vertices.size());
+        slab_inds[cuda_internalToIndex1DSlab(x, y, z, size)][axis] = uint(mesh.vertices.size());
         mesh.vertices.push_back(v);
         mesh.normals.push_back(VEC3F(0, 0, 0));
     }
@@ -196,7 +188,7 @@ namespace MC
         VEC3F& vc = mesh.vertices[c];
         VEC3F ab = va - vb;
         VEC3F cb = vc - vb;
-        VEC3F n = mc_internalCross(cb, ab);
+        VEC3F n = cuda_internalCross(cb, ab);
         mesh.normals[a] += n;
         mesh.normals[b] += n;
         mesh.normals[c] += n;
@@ -271,31 +263,74 @@ namespace MC
                         continue;
 
                     if (y == 0 && z == 0)
+#if kernel 
                         mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[0], vs[1], 0, x, y, z, size);
+#else
+                        mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[0], vs[1], 0, x, y, z, size);
+#endif
                     if (z == 0)
+#if kernel 
                         mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[2], vs[3], 0, x, y + 1, z, size);
+#else
+                        mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[2], vs[3], 0, x, y + 1, z, size);
+#endif
                     if (y == 0)
+#if kernel 
                         mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[4], vs[5], 0, x, y, z + 1, size);
-
+#else
+                        mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[4], vs[5], 0, x, y, z + 1, size);
+#endif
+#if kernel 
                     mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[6], vs[7], 0, x, y + 1, z + 1, size);
-
+#else
+                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[6], vs[7], 0, x, y + 1, z + 1, size);
+#endif
                     if (x == 0 && z == 0)
+#if kernel 
                         mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[0], vs[2], 1, x, y, z, size);
+#else
+                        mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[0], vs[2], 1, x, y, z, size);
+#endif
                     if (z == 0)
-                        mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[1], vs[3], 1,x + 1, y, z, size);
+#if kernel 
+                        mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[1], vs[3], 1, x + 1, y, z, size);
+#else
+                        mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[1], vs[3], 1,x + 1, y, z, size);
+#endif
                     if (x == 0)
+#if kernel 
                         mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[4], vs[6], 1, x, y, z + 1, size);
-
+#else
+                        mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[4], vs[6], 1, x, y, z + 1, size);
+#endif
+#if kernel 
                     mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[5], vs[7], 1, x + 1, y, z + 1, size);
-
+#else
+                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[5], vs[7], 1, x + 1, y, z + 1, size);
+#endif
                     if (x == 0 && y == 0)
+#if kernel 
                         mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[0], vs[4], 2, x, y, z, size);
+#else
+                        mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[0], vs[4], 2, x, y, z, size);
+#endif
                     if (y == 0)
+#if kernel 
                         mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[1], vs[5], 2, x + 1, y, z, size);
+#else
+                        mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[1], vs[5], 2, x + 1, y, z, size);
+#endif
                     if (x == 0)
+#if kernel 
                         mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[2], vs[6], 2, x, y + 1, z, size);
-
+#else
+                        mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[2], vs[6], 2, x, y + 1, z, size);
+#endif
+#if kernel 
                     mc_cudaComputeEdge(slab_inds, outputMesh, grid, vs[3], vs[7], 2, x + 1, y + 1, z, size);
+#else
+                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[3], vs[7], 2, x + 1, y + 1, z, size);
+#endif
 
                     edge_indices[0] = slab_inds[cuda_internalToIndex1DSlab(x, y, z, size)].x();
                     edge_indices[1] = slab_inds[cuda_internalToIndex1DSlab(x, y + 1, z, size)].x();
