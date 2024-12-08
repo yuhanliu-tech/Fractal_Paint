@@ -44,9 +44,6 @@ fn perlin3(coralIdx: u32, scaledTime: f32) -> vec3f {
     return vec3f(perlin(seedPos), perlin(seedPos + 110.93), perlin(seedPos + 350.51));
 }
 
-const bboxMin = vec3f(-100, 0, -50);
-const bboxMax = vec3f(100, 8, 50);
-
 // CHECKITOUT: this is an example of a compute shader entry point function
 @compute
 @workgroup_size(${moveLightsWorkgroupSize})

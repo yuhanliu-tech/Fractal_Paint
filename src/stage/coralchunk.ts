@@ -4,7 +4,7 @@ import * as shaders from '../shaders/shaders';
 
 export class CoralChunk {
     static readonly maxNumCoral = 5000;
-    static readonly numCoral = 100;
+    static readonly numCoral = 50;
     static readonly numFloatsPerCoral = 12;
     static readonly chunkSize = 1024;
 
@@ -27,7 +27,8 @@ export class CoralChunk {
             size: 16 + this.coralArray.byteLength, // 16 for numCoral + padding
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         });
-        device.queue.writeBuffer(this.coralSet, 0, new Uint32Array([CoralChunk.maxNumCoral]));
+        // FIXME: Don't hardcode number of coral
+        device.queue.writeBuffer(this.coralSet, 0, new Uint32Array([CoralChunk.numCoral]));
 
         let centerBuffer = device.createBuffer({
             label: "Coral chunk center buffer",
