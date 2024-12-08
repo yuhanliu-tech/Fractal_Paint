@@ -248,11 +248,11 @@ fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
         pNew.x += sway * N;  // Add some sway to the tentacles
         pNew.z += sway * (1.0 - N) * 0.5;
         
-        if (pNew.y > -1.5) {
+        if (pNew.y > -2.0) {
             var mp: vec3<f32> = pNew;
 
             // polar repetition to create multiple tentacles around y-axis
-            let mpxz = pModPolar(mp.xz, 4.0, 0.1); // internal
+            let mpxz = pModPolar(mp.xz, 3.0, 0.1); // internal
             mp.x = mpxz.x;
             mp.z = mpxz.y;
             
@@ -297,8 +297,8 @@ fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
             var opxz = pModPolar(op.xz, 15.0, 1.0);
 
             // more animated stringy tentacles
-            opxz += sway * 0.5;
-            opxz += pump * 0.15;
+            opxz += sway * 0.2;
+            opxz += pump * 0.05;
 
             op.x = opxz.x;
             op.z = opxz.y;
