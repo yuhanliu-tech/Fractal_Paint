@@ -82,7 +82,7 @@ __device__ __device__ void setDefaultArraySizes(
     uint normSize,
     uint triSize);
 
-__global__ void dev_internalComputeEdge(
+__host__ __device__ VEC3F dev_internalComputeEdge(
     VEC3I* slab_inds,
     Mesh& mesh,
     Grid3D* grid,
@@ -93,10 +93,4 @@ __global__ void dev_internalComputeEdge(
     uint y,
     uint z,
     const VEC3I& size
-);
-
-__device__ __host__ void dev_march_cubes(
-    Grid3D* grid, 
-    Mesh& outputMesh, 
-    bool verbose = false
 );

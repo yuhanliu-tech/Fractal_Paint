@@ -24,6 +24,7 @@ import oceanFloorVertRaw from './ocean_floor.vs.wgsl?raw';
 import oceanFloorFragRaw from './ocean_floor.fs.wgsl?raw';
 import oceanFloorComputeRaw from './ocean_floor.cs.wgsl?raw';
 
+import scatteringRaw from './scattering.wgsl?raw';
 import spawnCoralComputeRaw from './spawn_coral.cs.wgsl?raw';
 import coralVertRaw from './coral.vs.wgsl?raw';
 import coralFragRaw from './coral.fs.wgsl?raw';
@@ -63,8 +64,10 @@ function processShaderRaw(raw: string) {
     return commonSrc + evalShaderRaw(raw);
 }
 
+const scatteringSrc: string = processShaderRaw(scatteringRaw);
+
 export const naiveVertSrc: string = processShaderRaw(naiveVertRaw);
-export const naiveFragSrc: string = processShaderRaw(naiveFragRaw);
+export const naiveFragSrc: string = scatteringSrc + evalShaderRaw(naiveFragRaw);
 
 export const forwardPlusFragSrc: string = processShaderRaw(forwardPlusFragRaw);
 
@@ -78,13 +81,13 @@ export const oceanSurfaceVertSrc: string = processShaderRaw(oceanSurfaceVertRaw)
 export const oceanSurfaceFragSrc: string = processShaderRaw(oceanSurfaceFragRaw);
 export const oceanSurfaceComputeSrc: string = processShaderRaw(oceanSurfaceComputeRaw);
 
-export const jellyfishFragSrc: string = processShaderRaw(jellyfishFragRaw);
+export const jellyfishFragSrc: string = scatteringSrc + evalShaderRaw(jellyfishFragRaw);
 export const fullscreenVertSrc: string = processShaderRaw(fullScreenVertRaw);
 
 export const oceanFloorVertSrc: string = processShaderRaw(oceanFloorVertRaw);
-export const oceanFloorFragSrc: string = processShaderRaw(oceanFloorFragRaw);
+export const oceanFloorFragSrc: string = scatteringSrc + evalShaderRaw(oceanFloorFragRaw);
 export const oceanFloorComputeSrc: string = processShaderRaw(oceanFloorComputeRaw);
 
 export const placeCoralComputeSrc: string = processShaderRaw(spawnCoralComputeRaw);
 export const coralVertSrc: string = processShaderRaw(coralVertRaw);
-export const coralFragSrc: string = processShaderRaw(coralFragRaw);
+export const coralFragSrc: string = scatteringSrc + evalShaderRaw(coralFragRaw);

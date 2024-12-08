@@ -14,9 +14,9 @@ struct WaterProperties {
 }
 
 @group(0) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
-@group(0) @binding(1) var<uniform> wavelengths: array<Wavelength, numWavelengths>;
-@group(0) @binding(2) var<uniform> waterProperties: array<WaterProperties, numWavelengths>;
-@group(0) @binding(3) var<uniform> sensitivities: array<vec3f, numWavelengths>;
+@group(0) @binding(2) var<uniform> wavelengths: array<Wavelength, numWavelengths>;
+@group(0) @binding(3) var<uniform> waterProperties: array<WaterProperties, numWavelengths>;
+@group(0) @binding(4) var<uniform> sensitivities: array<vec3f, numWavelengths>;
 
 const lightDirection = normalize(vec3(-0.2 , 0.6 + sin(20) * 0.15 , 1.0));
 

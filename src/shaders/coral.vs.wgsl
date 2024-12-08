@@ -11,8 +11,9 @@ struct VertexInput {
 
 struct VertexOutput {
     @builtin(position) position: vec4f, // Clip-space position
-    @location(0) normal: vec3f,          // Normal vector
-    @location(1) color: vec3f        // Color  
+    @location(0) pos: vec3f,          // World-space position
+    @location(1) normal: vec3f,          // Normal vector
+    @location(2) color: vec3f        // Color  
 }
 
 // Helper function to create a rotation matrix from Euler angles
@@ -75,6 +76,7 @@ fn main(input: VertexInput, @builtin(instance_index) instanceIndex: u32) -> Vert
 
     // Project to clip space
     output.position = cameraUniforms.viewProj * vec4f(worldPosition, 1.0);
+    output.pos = worldPosition;
     output.position.y += 6;
 
     output.normal = input.normal;

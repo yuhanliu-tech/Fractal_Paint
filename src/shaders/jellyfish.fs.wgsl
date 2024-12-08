@@ -1,8 +1,6 @@
-@group(${bindGroup_scene}) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
-
 @group(1) @binding(0) var<uniform> time: f32;
 @group(1) @binding(1) var colorTexture : texture_2d<f32>;
-@group(1) @binding(2) var depthTexture : texture_2d<f32>; // we don't need this?
+@group(1) @binding(2) var depthTexture : texture_2d<f32>; // unused
 @group(1) @binding(3) var<uniform> world_position: vec2f;
 
 // reference: https://www.shadertoy.com/view/McGcWW
@@ -28,9 +26,9 @@ const MAX_DISTANCE: f32 =  100.f;
 const HIT_DISTANCE: f32 =  0.01;
 
 // Colors
-const accentColor1: vec3<f32> = vec3<f32>(1.0, 0.1, 0.5);
-const accentColor2: vec3<f32> = vec3<f32>(1.0, 0.5, 0.1);
-const baseColor: vec3<f32> = vec3<f32>(0.8, 0.5, 0.5);
+const accentColor1: vec3<f32> = vec3<f32>(0.2, 0.1, 0.8);
+const accentColor2: vec3<f32> = vec3<f32>(0.2, 0.5, 0.8);
+const baseColor: vec3<f32> = vec3<f32>(0.7, 0.7, 1.0);
 
 // Noise Functions
 fn N1(x: f32) -> f32 {
@@ -44,8 +42,7 @@ fn N2(x: f32, y: f32) -> f32 {
 fn N3(p: vec3<f32>) -> f32 {
     var pNew = fract(p * 0.3183099 + 0.1);
     pNew *= 17.0;
-    // Continue processing p as needed
-    return pNew.x; // Example return, further processing can follow
+    return pNew.x;
 }
 
 // Structs
@@ -75,32 +72,6 @@ struct RC {
 
 // helper funcs -------------------------------------------------
 
-fn atan2(y: f32, x: f32) -> f32 {
-    if x > 0.0 {
-        // First and fourth quadrants
-        return atan(y / x);
-    } else if x < 0.0 {
-        if y >= 0.0 {
-            // Second quadrant
-            return atan(y / x) + PI; // Add π
-        } else {
-            // Third quadrant
-            return atan(y / x) - PI; // Subtract π
-        }
-    } else {
-        // x == 0.0
-        if y > 0.0 {
-            // Positive y-axis
-            return (PI/2); // π/2
-        } else if y < 0.0 {
-            // Negative y-axis
-            return -(PI/2); // -π/2
-        } else {
-            // Origin (undefined behavior)
-            return 0.0; // Default to 0.0
-        }
-    }
-}
 
 // N31 function (noise generation)
 fn N31(p: f32) -> vec3<f32> {
@@ -130,17 +101,18 @@ fn sdSphere(p: vec3<f32>, pos: vec3<f32>, s: f32) -> f32 {
 // creates polar symmetry by repeating space in angular segments 
 fn pModPolar(p: vec2<f32>, repetitions: f32, fix: f32) -> vec2<f32> {
     let angle: f32 = twopi / repetitions;
-    var a: f32 = atan2(p.y,p.x) + angle / 2.0;
+    var a: f32 = atan2(p.y,p.x);
     
     // Correct the quadrant manually based on the signs of x and y
     if (p.x < 0.0) {
         a += PI;
     }
+
     let r: f32 = length(p);
     var c: f32 = floor(a / angle);
     a = (a % angle) - (angle / 2.0) * fix;
-    let pNew = vec2<f32>(cos(a), sin(a)) * r;
-    return pNew;
+
+    return vec2<f32>(cos(a), sin(a)) * r;
 }
 
 // 2D point-line distance function
@@ -272,44 +244,71 @@ fn map(p: vec3<f32>, id: vec3<f32>) -> DE {
     
     // if point is below a certain height, add tentacles
     if (pNew.y < 0.5) {
-        //var sway: f32 = sin(t + pNew.y + N * twopi) * smoothstep(-3.0, 0.5, 1.f / pNew.y) * N * 0.3;
-        //pNew.x += sway * N;  // Add some sway to the tentacles
-        //pNew.z += sway * (1.0 - N);
+        var sway: f32 = sin(t + pNew.y + N * twopi) * (1.0 - smoothstep(-2.5, 0.5, pNew.y)) * N * 0.001;
+        pNew.x += sway * N;  // Add some sway to the tentacles
+        pNew.z += sway * (1.0 - N) * 0.5;
         
-        var mp: vec3<f32> = pNew;
+        if (pNew.y > -2.0) {
+            var mp: vec3<f32> = pNew;
 
-        // polar repetition to create multiple tentacles around y-axis
-        let mpxz = pModPolar(mp.xz, 5.0, 0.0); // internal
-        mp.x = mpxz.x;
-        mp.z = mpxz.y;
-        
-        // signed dist to cylinder representing tentacle
-        var d3: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -3.5, 0.1, 0.01, mp.y);
+            // polar repetition to create multiple tentacles around y-axis
+            let mpxz = pModPolar(mp.xz, 3.0, 0.1); // internal
+            mp.x = mpxz.x;
+            mp.z = mpxz.y;
+            
+            // signed dist to cylinder representing tentacle
+            var d3: f32 = length(mp.xz - vec2<f32>(0.2, 0.15)) - remap(0.5, -1.5, 0.1, 0.01, mp.y);
 
-        // if dist closer, set material to inside tentacles
-        if (d3 < o.d) {
-            o.m = 2.0;
+            // if dist closer, set material to inside tentacles
+            if (d3 < o.d) {
+                o.m = 1.0;
+            }
+
+            // wavy perturbations to tentacles
+            d3 += (sin(mp.y * 30.0) * 0.02 + sin(mp.y * 60.0) * 0.015 + sin(mp.y * 90.0) * 0.01);
+            
+            // smaller cylinder for finer detail
+            var d32: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -3.5, 0.1, 0.01, mp.y) * 0.5;
+            d3 = min(d3, d32);
+            o.d = smin(o.d, d3, 0.5);
         }
 
-        // wavy perturbations to tentacles
-        d3 += (sin(mp.y * 30.0) * 0.02 + sin(mp.y * 60.0) * 0.015 + sin(mp.y * 90.0) * 0.01);
-        
-        // smaller cylinder for finer detail
-        var d32: f32 = length(mp.xz - vec2<f32>(0.2, 0.1)) - remap(0.5, -3.5, 0.1, 0.01, mp.y) * 0.5;
-        d3 = min(d3, d32);
-        o.d = smin(o.d, d3, 0.5);
-        
-        if (pNew.y < 0.2) {
+        // outer tentacles
+        if (pNew.y < 0.2 && pNew.y > -3.0) {
             var op: vec3<f32> = pNew;
-            let opxz = pModPolar(op.xz, 13.0, 1.0);
+            let opxz = pModPolar(op.xz, 13.0, 0.5);
             op.x = opxz.x;
             op.z = opxz.y;
             
-            var d4: f32 = length(op.xz - vec2<f32>(0.85, 0.0)) - remap(0.5, -3.0, 0.04, 0.0, op.y);
+            // add perturbations here as well
+            var d4: f32 = length(op.xz - vec2<f32>(0.65, 0.1)) - remap(0.8, -3.0, 0.1, 0.0, op.y);
+            d4 += (sin(op.y*15.)+sin(op.y*15.))*.02;
+
             if (d4 < o.d) {
                 o.m = 3.0;
+                o.d = d4;
             }
-            o.d = smin(o.d, d4, 0.15);
+            o.d = smin(o.d, d4, 0.05);
+        }
+
+        // stringy tentacles
+        if (pNew.y < 0.2 && pNew.y > -3.5) {
+            var op: vec3<f32> = pNew;
+            var opxz = pModPolar(op.xz, 15.0, 1.0);
+
+            // more animated stringy tentacles
+            opxz += sway * 0.2;
+            opxz += pump * 0.05;
+
+            op.x = opxz.x;
+            op.z = opxz.y;
+            var d4: f32 = length(op.xz - vec2<f32>(0.85, 0.01)) - remap(0.8, -3.0, 0.01, 0.0, op.y);
+
+            if (d4 < o.d) {
+                o.m = 1.0;
+                o.d = d4;
+            }
+            o.d = smin(o.d, d4, 0.01);
         }
     }
     
@@ -332,7 +331,7 @@ fn CastRay(r: Ray) -> DE {
     var p: vec3<f32>; // current pos along ray
     var q: RC; // repetition cell data
     var t: f32 = time;
-    var grid: vec3<f32> = vec3<f32>(5.0, 150.0, 150.0); // grid size for repeating jellies in scene
+    var grid: vec3<f32> = vec3<f32>(5.0, 180.0, 180.0); // grid size for repeating jellies in scene
     
     // ray marching loop
     for (var i: f32 = 0.0; i < MAX_STEPS; i+=1) {
@@ -547,26 +546,14 @@ fn render(uv: vec2<f32>, camRay: Ray, bg: vec3<f32>, accent: vec3<f32>) -> vec3<
 
 @fragment
 fn main(in: FragmentInput) -> @location(0) vec4f {
-
-    // setup UVs
-    let index = vec2u(in.fragPos.xy);
-
-    var bg = textureLoad(colorTexture, index, 0).xyz; // background is previous pass
-    //bg = vec3<f32>(0.1, 0.5, 0.6); // solid background
-
     var uv: vec2<f32> = in.texCoord;
     uv -= 0.5;
 
-    //var t = 0.4f * time;
-    var accent = mix(accentColor1, accentColor2, sin(15.456));
-
     // camera setup ----------------------
-
     let camPos = cameraUniforms.cameraPos.xyz;
     let camForward = normalize(cameraUniforms.cameraLookPos.xyz - camPos);
     let camLeft = -normalize(cross(up, camForward));
     let camUp = -normalize(cross(camForward, camLeft)); 
-    let camCenter = camPos + camForward;
     let cami = (camPos + camForward) + camLeft * uv.x + camUp * uv.y;
 
     var camRay: Ray; 
@@ -574,9 +561,22 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     camRay.d = normalize(cami - camPos);   // ray direction is the vector from the cam pos through the point on the imaginary screen
     // end camera setup -------------------
     
+    // setup UVs
+    let index = vec2u(in.fragPos.xy);
+    let depth = camPos.y * DIST_SCALE;
+    
+    var bg = select(
+        textureLoad(colorTexture, index, 0).xyz,
+        aces_tonemap(multipleScatteringIrradiance(depth, -camRay.d, 1024)),
+        textureLoad(depthTexture, index, 0).x == 1.0); // background is previous pass
+    //bg = vec3<f32>(0.5, 0.6, 0.6); // solid background
+
+    //var t = 0.4f * time;
+    var accent = mix(accentColor1, accentColor2, sin(15.456));
+
     var col: vec3<f32> = render(uv, camRay, bg, accent); // entry-point into jellyfish rendering
     
-    if (camPos.y >= 40.f) { // FIXME: don't hardcode this
+    if (camPos.y >= 7.f) { // FIXME: don't hardcode this
         return vec4<f32>(bg, 1.0); // don't make jellies if camera is above ocean surface
     }
     return vec4<f32>(col, 1.0);
