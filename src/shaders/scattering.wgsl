@@ -52,6 +52,8 @@ const SUN_STRENGTH = 4.0;
 const DIST_SCALE = 0.03;
 
 const CAMERA_POINT_LIGHT_STRENGTH = 0.2;
+const CAUSTIC_SCALE = 0.005;
+const CAUSTIC_INTENSITY = 0.1;
 
 fn totalIrradiance(
     origin: vec3f,
@@ -68,7 +70,7 @@ fn totalIrradiance(
     let surface_point = pos + lightDirection * depth / lightDirection.y;
 
     let intensity = tiledCaustic(surface_point.xz * 0.005, time);
-    return vec3(intensity);
+    return vec3(intensity) * 0.5;
     depth *= DIST_SCALE;
     distance *= DIST_SCALE;
 

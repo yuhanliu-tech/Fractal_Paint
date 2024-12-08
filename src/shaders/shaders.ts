@@ -24,11 +24,13 @@ import oceanFloorVertRaw from './ocean_floor.vs.wgsl?raw';
 import oceanFloorFragRaw from './ocean_floor.fs.wgsl?raw';
 import oceanFloorComputeRaw from './ocean_floor.cs.wgsl?raw';
 
-import scatteringRaw from './scattering.wgsl?raw';
+
 import spawnCoralComputeRaw from './spawn_coral.cs.wgsl?raw';
 import coralVertRaw from './coral.vs.wgsl?raw';
 import coralFragRaw from './coral.fs.wgsl?raw';
 
+import scatteringRaw from './scattering.wgsl?raw';
+import hexTilingRaw from './hex_tiling.wgsl?raw';
 // CONSTANTS (for use in shaders)
 // =================================
 
@@ -79,7 +81,7 @@ export const clusteringComputeSrc: string = processShaderRaw(clusteringComputeRa
 
 export const oceanSurfaceVertSrc: string = processShaderRaw(oceanSurfaceVertRaw);
 export const oceanSurfaceFragSrc: string = processShaderRaw(oceanSurfaceFragRaw);
-export const oceanSurfaceComputeSrc: string = processShaderRaw(oceanSurfaceComputeRaw);
+export const oceanSurfaceComputeSrc: string = hexTilingRaw + processShaderRaw(oceanSurfaceComputeRaw);
 
 export const jellyfishFragSrc: string = scatteringSrc + evalShaderRaw(jellyfishFragRaw);
 export const fullscreenVertSrc: string = processShaderRaw(fullScreenVertRaw);
