@@ -1,7 +1,7 @@
 #ifndef MC_H
 #define MC_H
 
-#define kernel 1
+#define kernel 0
 
 #include <mutex>
 #include <vector>

@@ -1,0 +1,5 @@
+Portals radius:      0.3
+Portals scale:       4
+
+Portal location:    0.4 0.0 0.0
+Portal rotation:    1 0 0 0
