@@ -38,7 +38,6 @@ int main(int argc, char *argv[]) {
     InterpolationGrid distField(&distFieldCoarse, InterpolationGrid::LINEAR);
     distField.mapBox.setCenter(VEC3F(0,0,0));
 
-    // FIXME: don't hard-code this lol
     PRINT("NOTE: Setting simulation bounds to hard-coded values (not from distance field)");
     distField.mapBox.min() = VEC3F(-0.5, -0.5, -0.5);
     distField.mapBox.max() = VEC3F(0.5, 0.5, 0.5);
@@ -137,8 +136,6 @@ int main(int argc, char *argv[]) {
     // -------------------------------------------------------------------------------------------------------------------------
     // Transforming mesh to grid field coords 
     // -------------------------------------------------------------------------------------------------------------------------
-
-    // FIXME: CUDA parallelization?
 
     // Currently march_cubes doesn't take the grid's mapBox into account; all vertices are
     // placed in [ (0, xRes), (0, yRes), (0, zRes) ] space. 

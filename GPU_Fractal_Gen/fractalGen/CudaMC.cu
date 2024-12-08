@@ -112,8 +112,8 @@ __device__ __device__ void setDefaultArraySizes(uint vertSize, uint normSize, ui
     defaultTriangleArraySize = triSize;
 }
 
-/*
-__global__ void dev_internalComputeEdge(
+
+__host__ __device__ VEC3F dev_internalComputeEdge(
     VEC3I* slab_inds, 
     Mesh& mesh, 
     Grid3D* grid, 
@@ -126,9 +126,6 @@ __global__ void dev_internalComputeEdge(
     const VEC3I& size
 )
 {
-    // early exit for edges with no intersection
-    if ((va < 0.0) == (vb < 0.0))
-        return;
 
     VEC3F offset = VEC3F(0, 0, 0);
 
@@ -140,7 +137,7 @@ __global__ void dev_internalComputeEdge(
             offset[axis] = 0.5 * (l_bound + r_bound);
             VEC3F samplePoint = VEC3F(x, y, z) + offset;
 
-            const Real val = grid->getf(samplePoint); //FIXME
+            const Real val = 0;// grid->getf(samplePoint); //FIXME
             if (fabs(val) < MC_ROOTFINDING_THRESH) break;
 
             if (val < 0) {
@@ -152,146 +149,6 @@ __global__ void dev_internalComputeEdge(
         }
     }
 
-    VEC3F v = VEC3F(x, y, z) + offset;
-    slab_inds[mc_internalToIndex1DSlab(x, y, z, size)][axis] = uint(mesh.vertices.size());
-    mesh.vertices.push_back(v);
-    mesh.normals.push_back(VEC3F(0, 0, 0));
+    return VEC3F(x, y, z) + offset;
 }
-
-
-
-__device__ __host__ void dev_march_cubes(
-    Grid3D* grid, 
-    Mesh& outputMesh, 
-    bool verbose = false
-) {
-
-    uint nx = grid->xRes;
-    uint ny = grid->yRes;
-    uint nz = grid->zRes;
-
-    outputMesh.vertices.reserve(defaultVerticeArraySize);
-    outputMesh.normals.reserve(defaultNormalArraySize);
-    outputMesh.indices.reserve(defaultTriangleArraySize);
-
-    PB_START("Marching cubes with res %dx%dx%d", nx, ny, nz);
-    PB_PROGRESS(0);
-
-    VEC3I* slab_inds = new VEC3I[nx * ny * 2];
-    for (uint i = 0; i < nx * ny * 2; ++i) {
-        slab_inds[i] = VEC3I(0, 0, 0);
-    }
-
-    for (uint z = 0; z < nz - 1; z++)
-    {
-        const VEC3I size(nx, ny, nz);
-
-        Real vs[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-        uint edge_indices[12];
-
-        for (uint y = 0; y < ny - 1; y++)
-        {
-            for (uint x = 0; x < nx - 1; x++)
-            {
-
-                vs[0] = grid->get(x, y, z);
-                vs[1] = grid->get(x + 1, y, z);
-                vs[2] = grid->get(x, y + 1, z);
-                vs[3] = grid->get(x + 1, y + 1, z);
-                vs[4] = grid->get(x, y, z + 1);
-                vs[5] = grid->get(x + 1, y, z + 1);
-                vs[6] = grid->get(x, y + 1, z + 1);
-                vs[7] = grid->get(x + 1, y + 1, z + 1);
-
-                const int config_n =
-                    ((vs[0] < 0) << 0) |
-                    ((vs[1] < 0) << 1) |
-                    ((vs[2] < 0) << 2) |
-                    ((vs[3] < 0) << 3) |
-                    ((vs[4] < 0) << 4) |
-                    ((vs[5] < 0) << 5) |
-                    ((vs[6] < 0) << 6) |
-                    ((vs[7] < 0) << 7);
-                if (config_n == 0 || config_n == 255)
-                    continue;
-
-                if (y == 0 && z == 0)
-                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[0], vs[1], 0, x, y, z, size);
-                if (z == 0)
-                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[2], vs[3], 0, x, y + 1, z, size);
-                if (y == 0)
-                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[4], vs[5], 0, x, y, z + 1, size);
-
-                mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[6], vs[7], 0, x, y + 1, z + 1, size);
-
-                if (x == 0 && z == 0)
-                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[0], vs[2], 1, x, y, z, size);
-                if (z == 0)
-                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[1], vs[3], 1, x + 1, y, z, size);
-                if (x == 0)
-                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[4], vs[6], 1, x, y, z + 1, size);
-
-                mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[5], vs[7], 1, x + 1, y, z + 1, size);
-
-                if (x == 0 && y == 0)
-                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[0], vs[4], 2, x, y, z, size);
-                if (y == 0)
-                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[1], vs[5], 2, x + 1, y, z, size);
-                if (x == 0)
-                    mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[2], vs[6], 2, x, y + 1, z, size);
-
-                mc_internalComputeEdge(slab_inds, outputMesh, grid, vs[3], vs[7], 2, x + 1, y + 1, z, size);
-
-                edge_indices[0] = slab_inds[mc_internalToIndex1DSlab(x, y, z, size)].x();
-                edge_indices[1] = slab_inds[mc_internalToIndex1DSlab(x, y + 1, z, size)].x();
-                edge_indices[2] = slab_inds[mc_internalToIndex1DSlab(x, y, z + 1, size)].x();
-                edge_indices[3] = slab_inds[mc_internalToIndex1DSlab(x, y + 1, z + 1, size)].x();
-                edge_indices[4] = slab_inds[mc_internalToIndex1DSlab(x, y, z, size)].y();
-                edge_indices[5] = slab_inds[mc_internalToIndex1DSlab(x + 1, y, z, size)].y();
-                edge_indices[6] = slab_inds[mc_internalToIndex1DSlab(x, y, z + 1, size)].y();
-                edge_indices[7] = slab_inds[mc_internalToIndex1DSlab(x + 1, y, z + 1, size)].y();
-                edge_indices[8] = slab_inds[mc_internalToIndex1DSlab(x, y, z, size)].z();
-                edge_indices[9] = slab_inds[mc_internalToIndex1DSlab(x + 1, y, z, size)].z();
-                edge_indices[10] = slab_inds[mc_internalToIndex1DSlab(x, y + 1, z, size)].z();
-                edge_indices[11] = slab_inds[mc_internalToIndex1DSlab(x + 1, y + 1, z, size)].z();
-
-                const uint64_t& config = mc_internalMarching_cube_tris[config_n];
-                const size_t n_triangles = config & 0xF;
-                const size_t n_indices = n_triangles * 3;
-                const size_t& indexBase = outputMesh.indices.size();
-                int offset = 4;
-                for (size_t i = 0; i < n_indices; i++)
-                {
-                    const int edge = (config >> offset) & 0xF;
-                    outputMesh.indices.push_back(edge_indices[edge]);
-                    offset += 4;
-                }
-                for (size_t i = 0; i < n_triangles; i++)
-                {
-                    mc_internalAccumulateNormal(outputMesh,
-                        outputMesh.indices[indexBase + i * 3 + 0],
-                        outputMesh.indices[indexBase + i * 3 + 1],
-                        outputMesh.indices[indexBase + i * 3 + 2]);
-                }
-
-            }
-        }
-
-        PB_PROGRESS((float)z / nz);
-
-        fflush(stdout);
-    }
-
-    delete[] slab_inds;
-
-    PB_END();
-
-    if (verbose) printf("\n");
-
-    for (size_t i = 0; i < outputMesh.normals.size(); i++)
-        outputMesh.normals[i] = mc_internalNormalize(outputMesh.normals[i]);
-
-}
-
-*/
 
