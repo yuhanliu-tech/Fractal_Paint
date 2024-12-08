@@ -1,6 +1,7 @@
 import { device } from "../renderer";
 import * as shaders from '../shaders/shaders';
 import { ObjLoader } from "./objLoader";
+import { CoralChunk } from "./coralchunk";
 
 export async function makeCoral(urls: string[]) {
     const models = await Promise.all(urls.map((url) => ObjLoader.load(url)));
@@ -16,19 +17,12 @@ export class Coral {
     }[] = []; // Array to store different coral types
 
     numCoral = 100;
-
-    static readonly maxNumCoral = 5000;
-    static readonly numFloatsPerCoral = 12; // vec3f is aligned at 16 byte boundaries
-    static readonly lightIntensity = 0.1;
-
-    coralArray = new Float32Array(Coral.maxNumCoral * Coral.numFloatsPerCoral);
-    coralSetStorageBuffer: GPUBuffer;
-
     camPosUniformBuffer: GPUBuffer;
 
     placeCoralComputeBindGroupLayout: GPUBindGroupLayout;
-    placeCoralComputeBindGroup: GPUBindGroup;
     placeCoralComputePipeline: GPUComputePipeline;
+
+    renderBindGroupLayout: GPUBindGroupLayout;
 
     constructor(objModels: ObjLoader[]) {
         // Initialize coral types
@@ -87,12 +81,12 @@ export class Coral {
 
         //----
 
-        this.coralSetStorageBuffer = device.createBuffer({
-            label: "coral",
-            size: 16 + this.coralArray.byteLength, // 16 for numCoral + padding
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-        });
-        this.updateCoralSetUniformNumCoral();
+        // this.coralSetStorageBuffer = device.createBuffer({
+        //     label: "coral",
+        //     size: 16 + this.coralArray.byteLength, // 16 for numCoral + padding
+        //     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+        // });
+        // this.updateCoralSetUniformNumCoral();
 
         this.camPosUniformBuffer = device.createBuffer({
             label: "camera position uniform",
@@ -108,12 +102,14 @@ export class Coral {
             ]
         });
 
-        this.placeCoralComputeBindGroup = device.createBindGroup({
-            label: "place coral compute bind group",
-            layout: this.placeCoralComputeBindGroupLayout,
+        this.renderBindGroupLayout = device.createBindGroupLayout({
+            label: "scene uniforms bind group layout",
             entries: [
-                { binding: 0, resource: { buffer: this.coralSetStorageBuffer } },
-                { binding: 1, resource: { buffer: this.camPosUniformBuffer } }
+                { // coralSet
+                    binding: 0,
+                    visibility: GPUShaderStage.VERTEX,
+                    buffer: { type: "read-only-storage" }
+                }
             ]
         });
 
@@ -133,12 +129,13 @@ export class Coral {
         });
     }
 
-    updateCoralSetUniformNumCoral() {
-        device.queue.writeBuffer(this.coralSetStorageBuffer, 0, new Uint32Array([this.numCoral]));
-    }
+    // updateCoralSetUniformNumCoral() {
+    //     device.queue.writeBuffer(this.coralSetStorageBuffer, 0, new Uint32Array([this.numCoral]));
+    // }
 
-    draw(passEncoder: GPURenderPassEncoder) {
+    draw(passEncoder: GPURenderPassEncoder, coralChunk: CoralChunk) {
         let instanceOffset = 0; // Start offset for the first coral type
+        passEncoder.setBindGroup(2, coralChunk.renderBindGroup);
 
         for (const coralType of this.coralTypes) {
             if (!coralType.vertexBuffer || !coralType.indexBuffer) continue;
@@ -155,17 +152,17 @@ export class Coral {
         }
     }
 
-    onFrame(x: number, y: number) {
-        device.queue.writeBuffer(this.camPosUniformBuffer, 0, new Float32Array([x, y]));
-        const encoder = device.createCommandEncoder();
-        const computePass = encoder.beginComputePass();
-        computePass.setPipeline(this.placeCoralComputePipeline);
-        computePass.setBindGroup(0, this.placeCoralComputeBindGroup);
+    // onFrame(x: number, y: number) {
+    //     device.queue.writeBuffer(this.camPosUniformBuffer, 0, new Float32Array([x, y]));
+    //     const encoder = device.createCommandEncoder();
+    //     const computePass = encoder.beginComputePass();
+    //     computePass.setPipeline(this.placeCoralComputePipeline);
+    //     computePass.setBindGroup(0, this.placeCoralComputeBindGroup);
 
-        const workgroupCount = Math.ceil(this.numCoral / shaders.constants.moveLightsWorkgroupSize);
-        computePass.dispatchWorkgroups(workgroupCount);
+    //     const workgroupCount = Math.ceil(this.numCoral / shaders.constants.moveLightsWorkgroupSize);
+    //     computePass.dispatchWorkgroups(workgroupCount);
 
-        computePass.end();
-        device.queue.submit([encoder.finish()]);
-    }
+    //     computePass.end();
+    //     device.queue.submit([encoder.finish()]);
+    // }
 }

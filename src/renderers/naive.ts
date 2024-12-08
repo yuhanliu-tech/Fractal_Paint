@@ -59,23 +59,18 @@ export class NaiveRenderer extends renderer.Renderer {
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 },
-                { // coralSet
-                    binding: 1,
-                    visibility: GPUShaderStage.VERTEX,
-                    buffer: { type: "read-only-storage" }
-                },
                 {   // wavelengths
-                    binding: 2,
+                    binding: 1,
                     visibility: GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 },
                 {   // water properties
-                    binding: 3,
+                    binding: 2,
                     visibility: GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 },
                 {   // wavelength sensitivities
-                    binding: 4,
+                    binding: 3,
                     visibility: GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 }
@@ -90,20 +85,16 @@ export class NaiveRenderer extends renderer.Renderer {
                     binding: 0,
                     resource: { buffer: this.camera.uniformsBuffer }
                 },
-                { // coralSet
-                    binding: 1,
-                    resource: { buffer: this.coral.coralSetStorageBuffer }
-                },
                 {
-                    binding: 2,
+                    binding: 1,
                     resource: { buffer: stage.spectralUniforms.wavelengthGPUBuffer }
                 },
                 {
-                    binding: 3,
+                    binding: 2,
                     resource: { buffer: stage.spectralUniforms.waterPropsGPUBuffer }
                 },
                 {
-                    binding: 4,
+                    binding: 3,
                     resource: { buffer: stage.spectralUniforms.sensitivitiesGPUBuffer }
                 }
             ]
@@ -163,7 +154,8 @@ export class NaiveRenderer extends renderer.Renderer {
                 label: "naive pipeline layout",
                 bindGroupLayouts: [
                     this.sceneUniformsBindGroupLayout,
-                    this.oceanFloor.renderBindGroupLayout
+                    this.oceanFloor.renderBindGroupLayout,
+                    this.coral.renderBindGroupLayout
                 ]
             }),
             depthStencil: {
@@ -378,12 +370,12 @@ export class NaiveRenderer extends renderer.Renderer {
             }
         });
         coralRenderPass.setPipeline(this.coralPipeline);
-
         coralRenderPass.setBindGroup(shaders.constants.bindGroup_scene, this.sceneUniformsBindGroup);
         coralRenderPass.setBindGroup(1, this.oceanFloorChunk.renderBindGroup);
 
         // Loop through each coral type
-        this.coral.draw(coralRenderPass);
+        // FIXME: for loop through a list of coral chunks
+        this.coral.draw(coralRenderPass, this.coralChunk);
 
         coralRenderPass.end();
 

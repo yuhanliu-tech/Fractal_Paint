@@ -78,7 +78,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     );
     
     //let noiseOffset = perlin(vec2f(terrainPosition.x, terrainPosition.z) * 0.1) * 0.5; // Scale noise
-    coralSet.coral[coralIdx-1].pos = terrainPosition;
+    coralSet.coral[coralIdx-1].pos = vec3f(0,0,0);
     // Assign random rotation and scale for variation
     coralSet.coral[coralIdx].rotation = vec3f(0.0, perlin3(coralIdx, 0.0).y * 360.0, 0.0);
     coralSet.coral[coralIdx].scale = 40.0 * (perlin3(coralIdx, 0.0).x * 0.5 + 0.5);

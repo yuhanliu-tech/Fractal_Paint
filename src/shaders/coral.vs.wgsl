@@ -1,6 +1,7 @@
 @group(0) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
-@group(0) @binding(1) var<storage, read> coralSet: CoralSet;
 @group(1) @binding(0) var displacementMap: texture_2d<f32>;
+@group(2) @binding(0) var<storage, read> coralSet: CoralSet;
+
 
 struct VertexInput {
     @location(0) position: vec3f,
@@ -61,9 +62,9 @@ fn main(input: VertexInput, @builtin(instance_index) instanceIndex: u32) -> Vert
 
     let displacement = textureLoad(displacementMap, vec2<i32>(i32(localSampleX), i32(localSampleZ)), 0).x;
 
-    instancePosition.x = instancePosition.x - 512;
+    instancePosition.x = instancePosition.x;
     instancePosition.y = f32(displacement) * 10 - 110;
-    instancePosition.z = instancePosition.z - 512;
+    instancePosition.z = instancePosition.z;
 
     let scaledPosition = input.position * instanceScale;
     let rotationMat = rotationMatrix(instanceRotation);
