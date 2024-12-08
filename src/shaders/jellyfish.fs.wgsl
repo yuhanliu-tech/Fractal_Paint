@@ -19,9 +19,9 @@ const halfpi: f32 = 1.570796326794896619;
 const twopi: f32 = 6.283185307179586;
 
 // parameters to control ray marching 
-const MAX_STEPS: f32 = 100.f;
+const MAX_STEPS: f32 = 80.f; // LOWER TO INCREASE PERFORMANCE
 const VOLUME_STEPS: f32 =  8.f;
-const MIN_DISTANCE: f32 =  0.1;
+const MIN_DISTANCE: f32 =  0.15; // HIGHER TO INCREASE PERFORMANCE
 const MAX_DISTANCE: f32 =  100.f;
 const HIT_DISTANCE: f32 =  0.01;
 
