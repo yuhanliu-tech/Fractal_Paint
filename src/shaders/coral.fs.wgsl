@@ -8,7 +8,7 @@ struct FragmentInput {
 @fragment
 fn main(in: FragmentInput) -> @location(0) vec4f
 {
-    let diffuseColor = vec3f(0.8, 0.2, 0.25);
+    let diffuseColor = in.color;
     let nor = normalize(in.normal);
 
     let origin = cameraUniforms.cameraPos.xyz;
