@@ -58,12 +58,14 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     
     // Calculate grid size dynamically based on numCoral
     let gridSize = ceil(sqrt(f32(coralSet.numCoral))); // Ensure enough cells to fit all corals
-    let cellSize = 100.0; // Each cell is 2 units wide and tall
+    let cellSize = 20.0; // Each cell is 2 units wide and tall
+
+    let adjustedIdx = u32(fract(f32(coralIdx) / 50.0) * 50.0); // mod based on the num of each coral drawn
 
     // Calculate base position in the grid
-    let x = f32(fract(f32(coralIdx) / gridSize) * gridSize);
+    let x = f32(fract(f32(adjustedIdx) / gridSize) * gridSize);
     //let x = f32(coralIdx % u32(gridSize));
-    let z = f32(coralIdx / u32(gridSize));
+    let z = f32(adjustedIdx / u32(gridSize));
 
     // Add noise for natural placement
     let noiseOffset = perlin3(coralIdx, 0.0) * cellSize; // Scale noise
