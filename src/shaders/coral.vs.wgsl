@@ -54,17 +54,17 @@ fn main(input: VertexInput, @builtin(instance_index) instanceIndex: u32) -> Vert
     var instanceScale = coralSet.coral[instanceIndex].scale;
     var instanceColor = coralSet.coral[instanceIndex].color;
 
-    // Displacement map size
-    let mapSize: f32 = 1024.0;
+    // // Displacement map size
+    // let mapSize: f32 = 1024.0;
 
-    // Transform the box's world-space position into the displacement map's local space
-    let localSampleX = ((instancePosition.x - cameraUniforms.cameraPos.x) + mapSize) % mapSize;
-    let localSampleZ = ((instancePosition.z - cameraUniforms.cameraPos.z) + mapSize) % mapSize;
+    // // Transform the box's world-space position into the displacement map's local space
+    // let localSampleX = ((instancePosition.x - cameraUniforms.cameraPos.x) + mapSize) % mapSize;
+    // let localSampleZ = ((instancePosition.z - cameraUniforms.cameraPos.z) + mapSize) % mapSize;
 
-    let displacement = textureLoad(displacementMap, vec2<i32>(i32(localSampleX), i32(localSampleZ)), 0).x;
+    // let displacement = textureLoad(displacementMap, vec2<i32>(i32(localSampleX), i32(localSampleZ)), 0).x;
 
     instancePosition.x = instancePosition.x;
-    instancePosition.y = f32(displacement) * 10 - 110;
+    instancePosition.y = -105;
     instancePosition.z = instancePosition.z;
 
     let scaledPosition = input.position * instanceScale;
