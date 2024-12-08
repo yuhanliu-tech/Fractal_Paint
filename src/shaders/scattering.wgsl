@@ -53,7 +53,7 @@ const DIST_SCALE = 0.03;
 
 const CAMERA_POINT_LIGHT_STRENGTH = 0.2;
 const CAUSTIC_SCALE = 0.005;
-const CAUSTIC_INTENSITY = 0.1;
+const CAUSTIC_INTENSITY = 0.01;
 
 fn totalIrradiance(
     origin: vec3f,
@@ -69,12 +69,11 @@ fn totalIrradiance(
 
     let surface_point = pos + lightDirection * depth / lightDirection.y;
 
-    let intensity = tiledCaustic(surface_point.xz * 0.005, time);
-    return vec3(intensity) * 0.5;
+    let caustic = blendedCaustic(surface_point.xz, time);
     depth *= DIST_SCALE;
     distance *= DIST_SCALE;
 
-    var irradiance = vec3(0.f);
+    var irradiance = vec3(caustic * CAUSTIC_INTENSITY);
 
     irradiance += directSunIrradiance(depth, distance, nor, albedo);
     irradiance += cameraPointLightIrradiance(depth, distance, direction, nor, albedo);
@@ -184,4 +183,22 @@ fn tiledCaustic(point : vec2f, time: f32) -> f32 {
     c /= f32(MAX_ITER);
     c = 1.17 - pow(c, 1.4);
     return (pow(abs(c), 8.0));
+}
+
+
+fn blendedCaustic(p : vec2f, time: f32) -> f32 {
+    let triangle = get_triangle_vertices(p);
+    let a = triangle[0];
+    let b = triangle[1];
+    let c = triangle[2];
+    // return hashtri(triangle);
+    let weights = barycentric_weights(p, a, b, c);
+
+    let samples = vec3f(
+        tiledCaustic(p * CAUSTIC_SCALE + random2(a) * PI * 2, time),
+        tiledCaustic(p * CAUSTIC_SCALE + random2(b) * PI * 2, time),
+        tiledCaustic(p * CAUSTIC_SCALE + random2(c) * PI * 2, time)
+    );
+
+    return dot(weights, samples);
 }
