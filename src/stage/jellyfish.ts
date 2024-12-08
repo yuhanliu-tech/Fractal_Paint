@@ -26,13 +26,6 @@ export class Jellyfish {
         this.bindGroupLayout = renderer.device.createBindGroupLayout({
             label: "jellyfish bind group layout",
             entries: [
-                // { // time
-                //     binding: 0,
-                //     visibility: GPUShaderStage.FRAGMENT,
-                //     buffer: {
-                //         type: "uniform"
-                //     }
-                // },
                 { // render texture
                     binding: 0,
                     visibility: GPUShaderStage.FRAGMENT,

@@ -67,7 +67,7 @@ fn totalIrradiance(
 
     let surface_point = pos + lightDirection * depth / lightDirection.y;
 
-    let intensity = tiledCaustic(surface_point.xz * 0.005, 0);
+    let intensity = tiledCaustic(surface_point.xz * 0.005, time);
     return vec3(intensity);
     depth *= DIST_SCALE;
     distance *= DIST_SCALE;
