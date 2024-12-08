@@ -329,7 +329,7 @@ fn CastRay(r: Ray) -> DE {
     var p: vec3<f32>; // current pos along ray
     var q: RC; // repetition cell data
     var t: f32 = time;
-    var grid: vec3<f32> = vec3<f32>(5.0, 50.0, 50.0); // grid size for repeating jellies in scene
+    var grid: vec3<f32> = vec3<f32>(5.0, 100.0, 100.0); // grid size for repeating jellies in scene
     //var grid: vec3<f32> = vec3<f32>(5.0, 180.0, 180.0); 
     
     // ray marching loop
@@ -442,7 +442,9 @@ fn JellyTex(p: vec3<f32>) -> vec4<f32> {
 // calculates final color for a given pixel
 fn render(uv: vec2<f32>, camRay: Ray, bg: vec3<f32>, accent: vec3<f32>) -> vec3<f32> {
 
-    var col: vec3<f32> = mix(baseColor, bg, 0.1);
+    //var newBase = aces_tonemap(baseColor);
+    var newBase = totalIrradiance(cameraUniforms.cameraPos.xyz, vec3(0,0.5,0), vec3(0,1,0), baseColor);
+    var col: vec3<f32> = mix(newBase + vec3(0.05, 0.05, 0.05), bg, 0.1);
 
     // cast ray into scene
     var o: DE = CastRay(camRay);
@@ -571,8 +573,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     //bg = vec3<f32>(0.5, 0.6, 0.6); // solid background
 
     //var t = 0.4f * time;
-    var accent = mix(accentColor1, accentColor2, sin(15.456));
-
+    var accent = mix(aces_tonemap(accentColor1), aces_tonemap(accentColor2), sin(15.456));
     var col: vec3<f32> = render(uv, camRay, bg, accent); // entry-point into jellyfish rendering
     
     if (camPos.y >= 7.f) { // FIXME: don't hardcode this
