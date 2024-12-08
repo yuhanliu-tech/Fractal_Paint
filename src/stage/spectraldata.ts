@@ -2,7 +2,7 @@ import { device } from "../renderer";
 import * as fs from 'fs';
 import { vec3 } from 'wgpu-matrix';
 
-export const JerlovWaterTypes = ['b_IA', 'c_IA', 'c_IB', 'd_II', 'e_III', 'f_1C', 'g_3C', 'h_5C', 'i_7C'] as const;
+export const JerlovWaterTypes = ['new', 'b_IA', 'c_IB', 'd_II', 'e_III', 'f_1C', 'g_3C', 'h_5C', 'i_7C'] as const;
 export type JerlovWaterType = typeof JerlovWaterTypes[number];
 
 export type WaterProps = {
@@ -85,7 +85,7 @@ export class SpectralUniforms {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
-        this.setWaterProps('b_IA');
+        this.setWaterProps('new');
         this.setSensitivities('cie');
     }
 

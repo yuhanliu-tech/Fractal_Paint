@@ -78,7 +78,7 @@ export const clusteredDeferredFullscreenFragSrc: string = processShaderRaw(clust
 export const clusteringComputeSrc: string = processShaderRaw(clusteringComputeRaw);
 
 export const oceanSurfaceVertSrc: string = processShaderRaw(oceanSurfaceVertRaw);
-export const oceanSurfaceFragSrc: string = processShaderRaw(oceanSurfaceFragRaw);
+export const oceanSurfaceFragSrc: string = scatteringSrc + evalShaderRaw(oceanSurfaceFragRaw);
 export const oceanSurfaceComputeSrc: string = processShaderRaw(oceanSurfaceComputeRaw);
 
 export const jellyfishFragSrc: string = scatteringSrc + evalShaderRaw(jellyfishFragRaw);
