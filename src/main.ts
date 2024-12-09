@@ -18,7 +18,7 @@ await initWebGPU();
 setupLoaders();
 
 let scene = new Scene();
-await scene.loadGltf('./scenes/sponza/Sponza.gltf');
+//await scene.loadGltf('./scenes/sponza/Sponza.gltf');
 
 let spectralData = await loadSpectralData('./waterprops/data.json');
 let spectralUniforms = new SpectralUniforms(spectralData);
