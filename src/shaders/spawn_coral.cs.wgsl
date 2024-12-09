@@ -60,7 +60,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     
     // Calculate grid size dynamically based on numCoral
     let gridSize = ceil(sqrt(f32(50.0))); // Ensure enough cells to fit all corals
-    let cellSize = 15.0; // Each cell is 2 units wide and tall
+    let cellSize = 20.0; // Each cell is 2 units wide and tall
 
     let adjustedIdx = u32(fract(f32(coralIdx) / 50.0) * 50.0); // mod based on the num of each coral drawn
 
