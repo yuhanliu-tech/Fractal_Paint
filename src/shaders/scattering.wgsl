@@ -95,7 +95,8 @@ fn totalIrradiance(
     irradiance += singleScatteringIrradiance(
         origin,
         direction,
-        distance
+        distance,
+        surface
     );
     
 
@@ -230,6 +231,7 @@ fn singleScatteringIrradiance(
     origin: vec3f,
     direction: vec3f,
     distance: f32,
+    surface: bool
 ) -> vec3f {
     let t = min(distance, SINGLE_SCATTERING_DISTANCE);
     var irradiance = vec3f();
@@ -239,11 +241,11 @@ fn singleScatteringIrradiance(
         let t_step = (t * (f32(i) + 0.5)) / f32(SINGLE_SCATTERING_STEPS);
         let pos = origin - direction * t_step;
 
-        let surface = projectToSurface(pos);
-        let t_surface = surface.y;
+        let surface_pos = projectToSurface(pos);
+        let t_surface = surface_pos.y;
 
         // godrays. Probihatively slow with the blended caustics :/
-        var caustic = 0.2 * tiledCaustic(surface.xz, t);
+        var caustic = select(0.2 * tiledCaustic(surface_pos.xz, t), 0.0, surface);
 
         let transmittance = exp(-(t_surface + t_step) * ext); // extinction
         irradiance += vec3(0.4,0.6,0.8) * (SUN_STRENGTH * caustic) * transmittance;

@@ -47,11 +47,8 @@ Below are a handful of results from different ocean properties, which can be obs
 
 ### Caustics
 
-(TODO: Nick)
+We utilize a [procedural caustics texture](https://www.shadertoy.com/view/MdlXz8) to generate fairly performant, tileable caustics on the ocean floor. We consider the inscattering from a particular point in the scene to be the radiance directly transmitted from the surface, where the incoming irradinace is some uniform sun strength along with radiance from the procedural texture. Doing so creates the effect of god rays throughout the scene.
 
-### Godrays
-
-(TODO: Nick)
 
 ## 🪸 Coral Reefs: Generation & placement
 
