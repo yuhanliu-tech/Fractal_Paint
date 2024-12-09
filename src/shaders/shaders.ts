@@ -24,11 +24,13 @@ import oceanFloorVertRaw from './ocean_floor.vs.wgsl?raw';
 import oceanFloorFragRaw from './ocean_floor.fs.wgsl?raw';
 import oceanFloorComputeRaw from './ocean_floor.cs.wgsl?raw';
 
-import scatteringRaw from './scattering.wgsl?raw';
+
 import spawnCoralComputeRaw from './spawn_coral.cs.wgsl?raw';
 import coralVertRaw from './coral.vs.wgsl?raw';
 import coralFragRaw from './coral.fs.wgsl?raw';
 
+import scatteringRaw from './scattering.wgsl?raw';
+import blending from './blending.wgsl?raw';
 // CONSTANTS (for use in shaders)
 // =================================
 
@@ -64,7 +66,7 @@ function processShaderRaw(raw: string) {
     return commonSrc + evalShaderRaw(raw);
 }
 
-const scatteringSrc: string = processShaderRaw(scatteringRaw);
+const scatteringSrc: string = blending + processShaderRaw(scatteringRaw);
 
 export const naiveVertSrc: string = processShaderRaw(naiveVertRaw);
 export const naiveFragSrc: string = scatteringSrc + evalShaderRaw(naiveFragRaw);
@@ -78,8 +80,8 @@ export const clusteredDeferredFullscreenFragSrc: string = processShaderRaw(clust
 export const clusteringComputeSrc: string = processShaderRaw(clusteringComputeRaw);
 
 export const oceanSurfaceVertSrc: string = processShaderRaw(oceanSurfaceVertRaw);
-export const oceanSurfaceFragSrc: string = processShaderRaw(oceanSurfaceFragRaw);
-export const oceanSurfaceComputeSrc: string = processShaderRaw(oceanSurfaceComputeRaw);
+export const oceanSurfaceFragSrc: string = scatteringSrc + evalShaderRaw(oceanSurfaceFragRaw);
+export const oceanSurfaceComputeSrc: string = blending + processShaderRaw(oceanSurfaceComputeRaw);
 
 export const jellyfishFragSrc: string = scatteringSrc + evalShaderRaw(jellyfishFragRaw);
 export const fullscreenVertSrc: string = processShaderRaw(fullScreenVertRaw);

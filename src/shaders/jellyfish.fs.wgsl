@@ -1,7 +1,5 @@
-@group(1) @binding(0) var<uniform> time: f32;
-@group(1) @binding(1) var colorTexture : texture_2d<f32>;
-@group(1) @binding(2) var depthTexture : texture_2d<f32>; // unused
-@group(1) @binding(3) var<uniform> world_position: vec2f;
+@group(1) @binding(0) var colorTexture : texture_2d<f32>;
+@group(1) @binding(1) var depthTexture : texture_2d<f32>; // unused
 
 // reference: https://www.shadertoy.com/view/McGcWW
 
@@ -19,9 +17,9 @@ const halfpi: f32 = 1.570796326794896619;
 const twopi: f32 = 6.283185307179586;
 
 // parameters to control ray marching 
-const MAX_STEPS: f32 = 100.f;
+const MAX_STEPS: f32 = 80.f; // LOWER TO INCREASE PERFORMANCE
 const VOLUME_STEPS: f32 =  8.f;
-const MIN_DISTANCE: f32 =  0.1;
+const MIN_DISTANCE: f32 =  0.15; // HIGHER TO INCREASE PERFORMANCE
 const MAX_DISTANCE: f32 =  100.f;
 const HIT_DISTANCE: f32 =  0.01;
 
@@ -331,7 +329,7 @@ fn CastRay(r: Ray) -> DE {
     var p: vec3<f32>; // current pos along ray
     var q: RC; // repetition cell data
     var t: f32 = time;
-    var grid: vec3<f32> = vec3<f32>(5.0, 50.0, 50.0); // grid size for repeating jellies in scene
+    var grid: vec3<f32> = vec3<f32>(5.0, 100.0, 100.0); // grid size for repeating jellies in scene
     //var grid: vec3<f32> = vec3<f32>(5.0, 180.0, 180.0); 
     
     // ray marching loop
@@ -444,7 +442,9 @@ fn JellyTex(p: vec3<f32>) -> vec4<f32> {
 // calculates final color for a given pixel
 fn render(uv: vec2<f32>, camRay: Ray, bg: vec3<f32>, accent: vec3<f32>) -> vec3<f32> {
 
-    var col: vec3<f32> = mix(baseColor, bg, 0.1);
+    //var newBase = aces_tonemap(baseColor);
+    var newBase = totalIrradiance(cameraUniforms.cameraPos.xyz, vec3(0,0.5,0), vec3(0,1,0), baseColor, false);
+    var col: vec3<f32> = mix(newBase + vec3(0.05, 0.05, 0.05), bg, 0.1);
 
     // cast ray into scene
     var o: DE = CastRay(camRay);
@@ -573,8 +573,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
     //bg = vec3<f32>(0.5, 0.6, 0.6); // solid background
 
     //var t = 0.4f * time;
-    var accent = mix(accentColor1, accentColor2, sin(15.456));
-
+    var accent = mix(aces_tonemap(accentColor1), aces_tonemap(accentColor2), sin(15.456));
     var col: vec3<f32> = render(uv, camRay, bg, accent); // entry-point into jellyfish rendering
     
     if (camPos.y >= 7.f) { // FIXME: don't hardcode this

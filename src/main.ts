@@ -18,7 +18,7 @@ await initWebGPU();
 setupLoaders();
 
 let scene = new Scene();
-await scene.loadGltf('./scenes/sponza/Sponza.gltf');
+//await scene.loadGltf('./scenes/sponza/Sponza.gltf');
 
 let spectralData = await loadSpectralData('./waterprops/data.json');
 let spectralUniforms = new SpectralUniforms(spectralData);
@@ -46,7 +46,7 @@ gui.add(frameStats, 'numFrames').name("Num Frames").listen();
 gui.add(frameStats, 'timeElapsed').name("Time Elapsed").listen();
 gui.add(frameStats, 'frameTime').step(0.01).name("ms per frame").listen();
 
-const waterPropsController = gui.add({ waterType: 'b_IA' }, 'waterType', JerlovWaterTypes).name('Water Type');
+const waterPropsController = gui.add({ waterType: 'new' }, 'waterType', JerlovWaterTypes).name('Water Type');
 waterPropsController.onChange((value: JerlovWaterType) => {
     spectralUniforms.setWaterProps(value);
 });

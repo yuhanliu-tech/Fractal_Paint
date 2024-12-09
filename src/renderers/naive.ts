@@ -73,6 +73,11 @@ export class NaiveRenderer extends renderer.Renderer {
                     binding: 3,
                     visibility: GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
+                },
+                {   // time
+                    binding: 4,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "uniform" }
                 }
             ]
         });
@@ -96,7 +101,11 @@ export class NaiveRenderer extends renderer.Renderer {
                 {
                     binding: 3,
                     resource: { buffer: stage.spectralUniforms.sensitivitiesGPUBuffer }
-                }
+                },
+                {
+                    binding: 4,
+                    resource: { buffer: this.chunk.timeBuffer }
+                },
             ]
         });
 
@@ -189,16 +198,16 @@ export class NaiveRenderer extends renderer.Renderer {
             label: "jellyfish textures bind group",
             layout: this.jellyfish.bindGroupLayout,
             entries: [
+                // {
+                //     binding: 0,
+                //     resource: { buffer: this.chunk.timeBuffer }
+                // },
                 {
                     binding: 0,
-                    resource: { buffer: this.chunk.timeBuffer }
-                },
-                {
-                    binding: 1,
                     resource: this.renderTextureView
                 },
                 {
-                    binding: 2,
+                    binding: 1,
                     resource: this.depthTextureView
                 }
             ]

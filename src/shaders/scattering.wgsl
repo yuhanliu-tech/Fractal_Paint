@@ -17,6 +17,7 @@ struct WaterProperties {
 @group(0) @binding(1) var<uniform> wavelengths: array<Wavelength, numWavelengths>;
 @group(0) @binding(2) var<uniform> waterProperties: array<WaterProperties, numWavelengths>;
 @group(0) @binding(3) var<uniform> sensitivities: array<vec3f, numWavelengths>;
+@group(0) @binding(4) var<uniform> time: f32;
 
 const lightDirection = normalize(vec3(-0.2 , 0.6 + sin(20) * 0.15 , 1.0));
 
@@ -51,20 +52,32 @@ const SUN_STRENGTH = 4.0;
 const DIST_SCALE = 0.03;
 
 const CAMERA_POINT_LIGHT_STRENGTH = 0.2;
+const CAUSTIC_SCALE = 0.005;
+const CAUSTIC_INTENSITY = 0.02;
 
 fn totalIrradiance(
     origin: vec3f,
     pos: vec3f,
     nor: vec3f,
-    albedo: vec3f
+    albedo: vec3f,
+    surface: bool
 ) -> vec3f {
     // return albedo;
-    let depth = origin.y * DIST_SCALE;
+    var depth = origin.y;
     let vector = origin - pos;
     let direction = normalize(vector);
-    let distance = length(vector) * DIST_SCALE;
+    var distance = length(vector);
 
+    let surface_point = pos + lightDirection * depth / lightDirection.y;
     var irradiance = vec3(0.f);
+
+    if (!surface) {
+        let caustic = blendedCaustic(surface_point.xz, time);
+        irradiance += vec3(caustic * CAUSTIC_INTENSITY);
+    }
+
+    depth *= DIST_SCALE;
+    distance *= DIST_SCALE;
 
     irradiance += directSunIrradiance(depth, distance, nor, albedo);
     irradiance += cameraPointLightIrradiance(depth, distance, direction, nor, albedo);
@@ -76,20 +89,6 @@ fn totalIrradiance(
     );
 
     return aces_tonemap(irradiance);
-}
-
-fn computeGaussian(
-    x: f32,
-    sigma: f32
-) -> f32 {
-    return exp(-x * x / (2 * sigma * sigma));
-}
-
-fn upsampleHack(
-    albedo: vec3f,
-    wavelengthIndex: u32
-) -> f32{
-    return dot(albedo, sensitivities[wavelengthIndex]);
 }
 
 fn upsampleAlbedo(
@@ -169,4 +168,43 @@ fn multipleScatteringIrradiance(
         totalIrradiance += irradiance * wavelengths[i].weight * sensitivities[i];
     }
     return totalIrradiance / 300;
+}
+
+fn tiledCaustic(point : vec2f, time: f32) -> f32 {
+    const MAX_ITER = 10;
+    const TAU = 6.28318530718;
+
+    var p = (point * TAU) % TAU - 250.0;
+    var i = p;
+    var c = 1.0;
+    var inten = 0.005;
+
+    for (var n = 0u; n < MAX_ITER; n++) {
+        let t = time * (1.0 - (3.5 / f32(n + 1)));
+        i = p + vec2f(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
+        c += 1.0 / length(vec2f(p.x / (sin(i.x + t) / inten), p.y / (cos(i.y + t) / inten)));
+    }
+    c /= f32(MAX_ITER);
+    c = 1.17 - pow(c, 1.4);
+    return (pow(abs(c), 8.0));
+}
+
+
+fn blendedCaustic(p : vec2f, time: f32) -> f32 {
+    let triangle = get_triangle_vertices(p);
+    let a = triangle[0];
+    let b = triangle[1];
+    let c = triangle[2];
+    // return hashtri(triangle);
+    let weights = barycentric_weights(p, a, b, c);
+
+    let t = time * 0.5; 
+
+    let samples = vec3f(
+        tiledCaustic(p * CAUSTIC_SCALE + random2(a) * PI * 2, t),
+        tiledCaustic(p * CAUSTIC_SCALE + random2(b) * PI * 2, t),
+        tiledCaustic(p * CAUSTIC_SCALE + random2(c) * PI * 2, t)
+    );
+
+    return dot(weights, samples);
 }
