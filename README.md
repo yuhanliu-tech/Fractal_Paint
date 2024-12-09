@@ -6,6 +6,8 @@ Implemented in WebGPU.
 
 [CLICK ME: Live Demo](https://yuhanliu-tech.github.io/spectral-sea/) (⚠️May take a minute to load!)
 
+[Presentation Slides](https://github.com/yuhanliu-tech/spectral-sea/blob/main/milestones/Spectral%20Sea%20Final%20Presentation.pdf)
+
 <img src="img/cover.png" width="500"/> 
 
 ## Table of Contents
