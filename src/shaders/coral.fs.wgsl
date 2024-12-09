@@ -18,7 +18,8 @@ fn main(in: FragmentInput) -> @location(0) vec4f
         origin,
         point,
         nor,
-        diffuseColor
+        diffuseColor,
+        false
     );
 
     return vec4(irradiance.xyz, 1);

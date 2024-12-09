@@ -80,7 +80,8 @@ fn main(in: FragmentInput) -> @location(0) vec4f
         cameraUniforms.cameraPos.xyz,
         in.pos,
         normal.xyz,
-        color
+        color,
+        true
     );
 
     // combine lighting results
