@@ -204,7 +204,7 @@ fn tiledCaustic(point : vec2f, time: f32) -> f32 {
 }
 
 
-fn blendedCaustic(p : vec2f, time: f32) -> f32 {
+fn blendedCaustic(p : vec2f, t: f32) -> f32 {
     let triangle = get_triangle_vertices(p);
     let a = triangle[0];
     let b = triangle[1];
@@ -246,7 +246,7 @@ fn singleScatteringIrradiance(
         let t_surface = surface.y;
 
         // godrays. Probihatively slow with the blended caustics :/
-        var caustic = 0.2 * tiledCaustic(surface.xz, time);
+        var caustic = 0.2 * tiledCaustic(surface.xz, t);
 
         let transmittance = exp(-(t_surface + t_step) * ext); // extinction
         irradiance += vec3(0.4,0.6,0.8) * (SUN_STRENGTH * caustic) * transmittance;
