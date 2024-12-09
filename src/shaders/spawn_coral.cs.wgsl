@@ -73,7 +73,7 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     let noiseOffset = perlin3(coralIdx, 0.0) * cellSize; // Scale noise
 
     // Add noise offset for world position
-    let worldOffset = perlin3f(world_position.x, world_position.y) * 512.0;
+    let worldOffset = perlin3f(world_position.x, world_position.y) * 342.0;
 
     // Terrain placement: Generate a 3D position
     let terrainPosition = vec3f(

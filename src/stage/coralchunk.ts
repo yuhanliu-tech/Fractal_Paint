@@ -6,7 +6,7 @@ export class CoralChunk {
     static readonly maxNumCoral = 5000;
     static readonly numCoral = 250;
     static readonly numFloatsPerCoral = 12;
-    static readonly chunkSize = 512;
+    static readonly chunkSize = 342;
 
     coral: coral.Coral;
     coralArray: Float32Array;
