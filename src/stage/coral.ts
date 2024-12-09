@@ -16,7 +16,6 @@ export class Coral {
         instanceCount: number;
     }[] = []; // Array to store different coral types
 
-    numCoral = 100;
     camPosUniformBuffer: GPUBuffer;
 
     placeCoralComputeBindGroupLayout: GPUBindGroupLayout;
@@ -75,7 +74,7 @@ export class Coral {
                 vertexBuffer,
                 indexBuffer,
                 indexCount: indices.length,
-                instanceCount: 50, // Default; can adjust for instanced rendering
+                instanceCount: 10, // Default; can adjust for instanced rendering
             };
         });
 
