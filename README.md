@@ -46,9 +46,9 @@ Below are a handful of results from different ocean properties, which can be obs
 
 ### Caustics
 
-(TODO: Nick)
+We utilize a [procedural caustics texture](https://www.shadertoy.com/view/MdlXz8) to generate fairly performant, tileable caustics. To perform single scattering, we take the sum of lighting contributions from
 
-### Godrays
+1. A light 
 
 (TODO: Nick)
 

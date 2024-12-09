@@ -570,7 +570,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f {
         textureLoad(colorTexture, index, 0).xyz,
         aces_tonemap(
             multipleScatteringIrradiance(depth, -camRay.d, 1024)
-            + singleScatteringIrradiance(camPos, -camRay.d, 1024 / DIST_SCALE)
+            + singleScatteringIrradiance(camPos, -camRay.d, 1024 / DIST_SCALE, false)
             ),
         textureLoad(depthTexture, index, 0).x == 1.0); // background is previous pass
     //bg = vec3<f32>(0.5, 0.6, 0.6); // solid background
