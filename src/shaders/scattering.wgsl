@@ -233,6 +233,8 @@ fn singleScatteringIrradiance(
     distance: f32,
     surface: bool
 ) -> vec3f {
+    return vec3(0.0);
+
     let t = min(distance, SINGLE_SCATTERING_DISTANCE);
     var irradiance = vec3f();
     let ext = waterProperties[5].sigma_t; // Only one wavelength since the program is already slow
