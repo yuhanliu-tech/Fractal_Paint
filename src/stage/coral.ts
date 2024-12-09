@@ -74,7 +74,7 @@ export class Coral {
                 vertexBuffer,
                 indexBuffer,
                 indexCount: indices.length,
-                instanceCount: 50, // Default; can adjust for instanced rendering
+                instanceCount: 10, // Default; can adjust for instanced rendering
             };
         });
 

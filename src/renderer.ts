@@ -4,7 +4,7 @@ import { Camera } from './stage/camera';
 import { Stage } from './stage/stage';
 import { FrameStats } from './stage/framestats';
 import { SpectralUniforms } from './stage/spectraldata';
-import { CoralChunk } from './stage/coralchunk';
+import { CoralChunkManager } from './stage/coralchunk';
 
 export var canvas: HTMLCanvasElement;
 export var canvasFormat: GPUTextureFormat;
@@ -105,7 +105,7 @@ export const vertexBufferLayout: GPUVertexBufferLayout = {
 export abstract class Renderer {
     protected scene: Scene;
     protected coral: Coral;
-    protected coralChunk: CoralChunk;
+    protected coralChunkManager: CoralChunkManager;
     protected spectralUniforms: SpectralUniforms;
     protected camera: Camera;
     protected stats: Stats;
@@ -117,7 +117,7 @@ export abstract class Renderer {
     constructor(stage: Stage) {
         this.scene = stage.scene;
         this.coral = stage.coral;
-        this.coralChunk = stage.coralChunk;
+        this.coralChunkManager = stage.coralChunkManager;
         this.spectralUniforms = stage.spectralUniforms;
         this.camera = stage.camera;
         this.stats = stage.stats;
@@ -145,6 +145,7 @@ export abstract class Renderer {
     private onFrame(time: DOMHighResTimeStamp) {
         let deltaTime = time - this.prevTime;
         this.camera.onFrame(deltaTime);
+        this.coralChunkManager.updateChunks([this.camera.cameraPos[0], this.camera.cameraPos[2]]);
         // this.coral.onFrame(this.camera.cameraPos[0], this.camera.cameraPos[2]);
 
         this.stats.begin();

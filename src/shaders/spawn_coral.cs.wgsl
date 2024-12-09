@@ -44,6 +44,11 @@ fn perlin3(coralIdx: u32, scaledTime: f32) -> vec3f {
     return vec3f(perlin(seedPos), perlin(seedPos + 110.93), perlin(seedPos + 350.51));
 }
 
+fn perlin3f(coralIdx: f32, scaledTime: f32) -> vec3f {
+    let seedPos = vec2f(coralIdx * 163.81f, scaledTime);
+    return vec3f(perlin(seedPos), perlin(seedPos + 110.93), perlin(seedPos + 350.51));
+}
+
 // CHECKITOUT: this is an example of a compute shader entry point function
 @compute
 @workgroup_size(${moveLightsWorkgroupSize})
@@ -54,8 +59,8 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     }
     
     // Calculate grid size dynamically based on numCoral
-    let gridSize = ceil(sqrt(f32(100.0))); // Ensure enough cells to fit all corals
-    let cellSize = 40.0; // Each cell is 2 units wide and tall
+    let gridSize = ceil(sqrt(f32(50.0))); // Ensure enough cells to fit all corals
+    let cellSize = 15.0; // Each cell is 2 units wide and tall
 
     let adjustedIdx = u32(fract(f32(coralIdx) / 50.0) * 50.0); // mod based on the num of each coral drawn
 
@@ -64,14 +69,17 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     //let x = f32(coralIdx % u32(gridSize));
     let z = f32(adjustedIdx / u32(gridSize));
 
-    // Add noise for natural placement
+    // Add noise for natural coral placement
     let noiseOffset = perlin3(coralIdx, 0.0) * cellSize; // Scale noise
+
+    // Add noise offset for world position
+    let worldOffset = perlin3f(world_position.x, world_position.y) * 512.0;
 
     // Terrain placement: Generate a 3D position
     let terrainPosition = vec3f(
-        x * cellSize + noiseOffset.x + world_position.x, // X: distribute corals horizontally
+        x * cellSize + noiseOffset.x + worldOffset.x + world_position.x, // X: distribute corals horizontally
         0.0,                              // Y: ground level (add elevation in vs shader)
-        z * cellSize + noiseOffset.z + world_position.y  // Z: distribute corals vertically
+        z * cellSize + noiseOffset.z + worldOffset.z + world_position.y  // Z: distribute corals vertically
     );
     
     //let noiseOffset = perlin(vec2f(terrainPosition.x, terrainPosition.z) * 0.1) * 0.5; // Scale noise

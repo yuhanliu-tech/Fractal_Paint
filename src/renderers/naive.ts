@@ -375,7 +375,7 @@ export class NaiveRenderer extends renderer.Renderer {
 
         // Loop through each coral type
         // FIXME: for loop through a list of coral chunks
-        this.coral.draw(coralRenderPass, this.coralChunk);
+        this.coralChunkManager.draw(coralRenderPass);
 
         coralRenderPass.end();
 

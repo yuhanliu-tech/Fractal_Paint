@@ -12,7 +12,7 @@ import { Camera } from './stage/camera';
 import { Stage } from './stage/stage';
 import { FrameStats } from './stage/framestats';
 import { loadSpectralData, JerlovWaterType, JerlovWaterTypes, SpectralData, SpectralUniforms } from './stage/spectraldata';
-import { CoralChunk } from './stage/coralchunk';
+import { CoralChunkManager } from './stage/coralchunk';
 
 await initWebGPU();
 setupLoaders();
@@ -25,7 +25,7 @@ let spectralUniforms = new SpectralUniforms(spectralData);
 
 const camera = new Camera();
 const coral = await makeCoral(['./GLTF/coralobj.obj', './GLTF/seastar.obj', './GLTF/hemisphere.obj', './GLTF/portalcoral.obj', './GLTF/branch.obj']); // wahoo, seastar
-const coralChunk = new CoralChunk(coral, [0, 0]);
+const coralChunkManager = new CoralChunkManager(coral);
 
 const stats = new Stats();
 stats.showPanel(0);
@@ -51,7 +51,7 @@ waterPropsController.onChange((value: JerlovWaterType) => {
     spectralUniforms.setWaterProps(value);
 });
 
-const stage = new Stage(scene, coral, coralChunk, spectralUniforms, camera, stats, frameStats);
+const stage = new Stage(scene, coral, coralChunkManager, spectralUniforms, camera, stats, frameStats);
 
 var renderer: Renderer | undefined;
 
