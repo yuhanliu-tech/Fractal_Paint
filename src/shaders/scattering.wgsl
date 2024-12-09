@@ -83,9 +83,6 @@ fn totalIrradiance(
         irradiance += vec3(caustic * CAUSTIC_INTENSITY);
     }
 
-    depth *= DIST_SCALE;
-    distance *= DIST_SCALE;
-
     irradiance += directSunIrradiance(depth * DIST_SCALE, distance * DIST_SCALE, nor, albedo);
     irradiance += cameraPointLightIrradiance(depth * DIST_SCALE, distance * DIST_SCALE, direction, nor, albedo);
 
