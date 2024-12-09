@@ -19,7 +19,7 @@ struct WaterProperties {
 @group(0) @binding(3) var<uniform> sensitivities: array<vec3f, numWavelengths>;
 @group(0) @binding(4) var<uniform> time: f32;
 
-const lightDirection = normalize(vec3(-0.2 , 0.6 + sin(20) * 0.15 , 1.0));
+const lightDirection = normalize(vec3(-0.2 , 0.5 , 0.7));
 
 fn getSun(dir: vec3<f32>) -> f32 { 
   return pow(max(0.0, dot(dir, lightDirection)), 70.0) * 60.0;
@@ -51,9 +51,16 @@ fn aces_tonemap(color: vec3<f32>) -> vec3<f32> {
 const SUN_STRENGTH = 4.0;
 const DIST_SCALE = 0.03;
 
-const CAMERA_POINT_LIGHT_STRENGTH = 0.2;
+const CAMERA_POINT_LIGHT_STRENGTH = 0.002;
 const CAUSTIC_SCALE = 0.005;
 const CAUSTIC_INTENSITY = 0.02;
+
+fn projectToSurface(
+    position: vec3f
+) -> vec3f {
+    let depth = position.y;
+    return position - lightDirection * depth / lightDirection.y;
+}
 
 fn totalIrradiance(
     origin: vec3f,
@@ -68,7 +75,7 @@ fn totalIrradiance(
     let direction = normalize(vector);
     var distance = length(vector);
 
-    let surface_point = pos + lightDirection * depth / lightDirection.y;
+    let surface_point = projectToSurface(pos);
     var irradiance = vec3(0.f);
 
     if (!surface) {
@@ -79,14 +86,21 @@ fn totalIrradiance(
     depth *= DIST_SCALE;
     distance *= DIST_SCALE;
 
-    irradiance += directSunIrradiance(depth, distance, nor, albedo);
-    irradiance += cameraPointLightIrradiance(depth, distance, direction, nor, albedo);
+    irradiance += directSunIrradiance(depth * DIST_SCALE, distance * DIST_SCALE, nor, albedo);
+    irradiance += cameraPointLightIrradiance(depth * DIST_SCALE, distance * DIST_SCALE, direction, nor, albedo);
 
     irradiance += multipleScatteringIrradiance(
-        depth,
+        depth * DIST_SCALE,
+        direction,
+        distance * DIST_SCALE
+    );
+
+    irradiance += singleScatteringIrradiance(
+        origin,
         direction,
         distance
     );
+    
 
     return aces_tonemap(irradiance);
 }
@@ -180,7 +194,7 @@ fn tiledCaustic(point : vec2f, time: f32) -> f32 {
     var inten = 0.005;
 
     for (var n = 0u; n < MAX_ITER; n++) {
-        let t = time * (1.0 - (3.5 / f32(n + 1)));
+        let t = time * 0.5 * (1.0 - (3.5 / f32(n + 1)));
         i = p + vec2f(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
         c += 1.0 / length(vec2f(p.x / (sin(i.x + t) / inten), p.y / (cos(i.y + t) / inten)));
     }
@@ -198,8 +212,6 @@ fn blendedCaustic(p : vec2f, time: f32) -> f32 {
     // return hashtri(triangle);
     let weights = barycentric_weights(p, a, b, c);
 
-    let t = time * 0.5; 
-
     let samples = vec3f(
         tiledCaustic(p * CAUSTIC_SCALE + random2(a) * PI * 2, t),
         tiledCaustic(p * CAUSTIC_SCALE + random2(b) * PI * 2, t),
@@ -208,3 +220,73 @@ fn blendedCaustic(p : vec2f, time: f32) -> f32 {
 
     return dot(weights, samples);
 }
+
+
+// Because we don't have any geometry that casts shadows, we do not lose efficiency
+// by not implementing single scattering with froxel lighting
+const SINGLE_SCATTERING_STEPS = 16;
+const SINGLE_SCATTERING_DISTANCE = 16;
+
+// Unlike the other irradiance functions, we walk along the ray and must do this in world space
+// without DIST_SCALE
+fn singleScatteringIrradiance(
+    origin: vec3f,
+    direction: vec3f,
+    distance: f32,
+) -> vec3f {
+    let t = min(distance, SINGLE_SCATTERING_DISTANCE);
+    var irradiance = vec3f();
+    let ext = waterProperties[5].sigma_t; // Only one wavelength since the program is already slow
+
+    for (var i = 0u; i < SINGLE_SCATTERING_STEPS; i++) {
+        let t_step = (t * (f32(i) + 0.5)) / f32(SINGLE_SCATTERING_STEPS);
+        let pos = origin - direction * t_step;
+
+        let surface = projectToSurface(pos);
+        let t_surface = surface.y;
+
+        // godrays. Probihatively slow with the blended caustics :/
+        var caustic = 0.2 * tiledCaustic(surface.xz, time);
+
+        let transmittance = exp(-(t_surface + t_step) * ext); // extinction
+        irradiance += vec3(0.4,0.6,0.8) * (SUN_STRENGTH * caustic) * transmittance;
+    }
+
+    return irradiance / f32(SINGLE_SCATTERING_STEPS);
+}
+
+// fn singleScatteringIrradiance(
+//     origin : vec3f,
+//     direction: vec3f,
+//     ld : vec3f,
+//     turbidity: f32,
+//     uv: vec2f
+// ) -> vec3f {
+//     t = min(t,ss_dist);
+//     var irradiance = vec3(0);
+//     let ext = waterProperties[5].sigma_t;
+    
+//     for (var i = 1u; i < SINGLE_SCATTERING_STEPS; i++) {
+//         let t_step = (-0.5 + t * float(i)) / float(SINGLE_SCATTERING_STEPS);
+//         let pos = origin + direction * t_step;
+
+//         let surface =
+        
+//         float t_surface = water_surf.x; // Distance to water surface
+        
+//         float l_caustic = 1.;
+
+//         // get caustics here for nice godrays
+//         l_caustic = 0.2 * getCaustics(pos, ld);
+//         l_caustic = ss_caustics_mult*1.*pow(l_caustic, 5.);
+//         #endif
+        
+//         if (shadow>0.2) {
+//             float transmittance = exp(-(t_surface + t_step) * ext); // extinction
+//             l_ss += vec3(0.4,0.6,0.8) * shadow * (sun_power*l_caustic) 
+//                   * transmittance;         
+//         }
+//     }
+//     return l_ss * ss_multiplier /float(ss_steps);
+// }
+
