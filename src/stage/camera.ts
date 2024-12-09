@@ -3,50 +3,51 @@ import { toRadians } from "../math_util";
 import { device, canvas, fovYDegrees, aspectRatio } from "../renderer";
 
 class CameraUniforms {
-    readonly buffer = new ArrayBuffer((16 * 3 + 4) * 6);
+    readonly buffer = new ArrayBuffer(4 * 16 + 4 * 4 + 4 * 4);
     private readonly floatView = new Float32Array(this.buffer);
 
     set viewProjMat(mat: Float32Array) {
         this.floatView.set(mat);
     }
-
-    set viewMat(mat: Float32Array) {
-        this.floatView.set(mat, 16);
-    }
-
-    set invViewProj(mat: Float32Array) {
-        this.floatView.set(mat, 16 * 2);
-    }
-
-    set xScale(n: number) {
-        this.floatView[16 * 3] = n;
-    }
-
-    set yScale(n: number) {
-        this.floatView[16 * 3 + 1] = n;
-    }
-
-    set near(n: number) {
-        this.floatView[16 * 3 + 2] = n;
-    }
-
-    set logfarovernear(n: number) {
-        this.floatView[16 * 3 + 3] = n;
-    }
-
+    
     set cameraPos(pos: Float32Array) {
-        this.floatView[16 * 3 + 4] = pos[0];
-        this.floatView[16 * 3 + 5] = pos[1];
-        this.floatView[16 * 3 + 6] = pos[2];
-        this.floatView[16 * 3 + 7] = 0;
+        this.floatView[16] = pos[0];
+        this.floatView[17] = pos[1];
+        this.floatView[18] = pos[2];
+        this.floatView[19] = 0;
     }
 
     set cameraLookPos(lookPos: Float32Array) {
-        this.floatView[16 * 3 + 8] = lookPos[0];
-        this.floatView[16 * 3 + 9] = lookPos[1];
-        this.floatView[16 * 3 + 10] = lookPos[2];
-        this.floatView[16 * 3 + 11] = 0;
+        this.floatView[20] = lookPos[0];
+        this.floatView[21] = lookPos[1];
+        this.floatView[22] = lookPos[2];
+        this.floatView[23] = 0;
     }
+    // set viewMat(mat: Float32Array) {
+    //     this.floatView.set(mat, 16);
+    // }
+
+    // set invViewProj(mat: Float32Array) {
+    //     this.floatView.set(mat, 16 * 2);
+    // }
+
+    // set xScale(n: number) {
+    //     this.floatView[16 * 3] = n;
+    // }
+
+    // set yScale(n: number) {
+    //     this.floatView[16 * 3 + 1] = n;
+    // }
+
+    // set near(n: number) {
+    //     this.floatView[16 * 3 + 2] = n;
+    // }
+
+    // set logfarovernear(n: number) {
+    //     this.floatView[16 * 3 + 3] = n;
+    // }
+
+    
 }
 
 export class Camera {
@@ -172,23 +173,26 @@ export class Camera {
 
     onFrame(deltaTime: number) {
         this.processInput(deltaTime);
-
+        
+        
         const lookPos = vec3.add(this.cameraPos, vec3.scale(this.cameraFront, 1));
-        const viewMat = mat4.lookAt(this.cameraPos, lookPos, [0, 1, 0]);
-        this.uniforms.viewMat = viewMat;
-        const viewProjMat = mat4.mul(this.projMat, viewMat);
-        this.uniforms.viewProjMat = viewProjMat;
-        const invViewProj = mat4.inverse(viewProjMat);
-        this.uniforms.invViewProj = invViewProj;
-
-        this.uniforms.xScale = 1 / this.projMat[0];
-        this.uniforms.yScale = 1 / this.projMat[5];
-        this.uniforms.near = Camera.nearPlane;
-        this.uniforms.logfarovernear = Math.log(Camera.farPlane / Camera.nearPlane);
-        this.uniforms.cameraPos = vec3.create(this.cameraPos[0], this.cameraPos[1], this.cameraPos[2]);
-
         this.uniforms.cameraLookPos = lookPos;
 
+        
+        const viewProjMat = mat4.mul(this.projMat, mat4.lookAt(this.cameraPos, lookPos, [0, 1, 0]));
+        this.uniforms.viewProjMat = viewProjMat;
+        
+        // const viewMat = mat4.lookAt(this.cameraPos, lookPos, [0, 1, 0]);
+        // this.uniforms.viewMat = viewMat;
+        
+        // const invViewProj = mat4.inverse(viewProjMat);
+        // this.uniforms.invViewProj = invViewProj;
+
+        // this.uniforms.xScale = 1 / this.projMat[0];
+        // this.uniforms.yScale = 1 / this.projMat[5];
+        // this.uniforms.near = Camera.nearPlane;
+        // this.uniforms.logfarovernear = Math.log(Camera.farPlane / Camera.nearPlane);
+        this.uniforms.cameraPos = vec3.create(this.cameraPos[0], this.cameraPos[1], this.cameraPos[2]);
         device.queue.writeBuffer(this.uniformsBuffer, 0, this.uniforms.buffer);
     }
 }
