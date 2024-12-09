@@ -443,7 +443,7 @@ fn JellyTex(p: vec3<f32>) -> vec4<f32> {
 fn render(uv: vec2<f32>, camRay: Ray, bg: vec3<f32>, accent: vec3<f32>) -> vec3<f32> {
 
     //var newBase = aces_tonemap(baseColor);
-    var newBase = totalIrradiance(cameraUniforms.cameraPos.xyz, vec3(0,0.5,0), vec3(0,1,0), baseColor);
+    var newBase = totalIrradiance(cameraUniforms.cameraPos.xyz, vec3(0,0.5,0), vec3(0,1,0), baseColor, false);
     var col: vec3<f32> = mix(newBase + vec3(0.05, 0.05, 0.05), bg, 0.1);
 
     // cast ray into scene

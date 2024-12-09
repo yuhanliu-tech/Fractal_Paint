@@ -24,7 +24,8 @@ fn main(in: FragmentInput) -> @location(0) vec4f
         cameraUniforms.cameraPos.xyz,
         in.pos,
         nor,
-        diffuseColor.rgb
+        diffuseColor.rgb,
+        false
     );
 
     return vec4(irradiance.xyz, 1);

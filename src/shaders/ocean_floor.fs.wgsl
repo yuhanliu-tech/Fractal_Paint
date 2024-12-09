@@ -59,7 +59,8 @@ fn main(in: FragmentInput) -> @location(0) vec4f
         cameraUniforms.cameraPos.xyz,
         in.pos,
         normal.xyz,
-        sandColor
+        sandColor,
+        false
     );
 
     // ocean color with lighting considerations
