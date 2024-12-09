@@ -58,7 +58,11 @@ Implementation of 2024 SIGGRAPH paper [Into the portal: Directable Fractal Self-
 
 <img src="img/fractal_flow.png" width="500"/> 
 
-We utilize Schor and Kim's technique for fractalizing meshes, which involves using Julia-set-inspired dynamical system to generate specifiable self-similar regions with chaotic details. The workflow, described in the image above, includes taking an arbitrary input OBJ which is then converted into an SDF and used to introduce self-similarity and fractal effects. 
+We utilize Schor and Kim's technique for fractalizing meshes, which involves using Julia-set-inspired dynamical system to generate specifiable self-similar regions with chaotic details. The workflow, described in the image above, includes taking an arbitrary input OBJ which is then converted into an SDF.
+
+By defining a function to be the SDF times some versor function (i.e. 3d perlin noise), applied to some point multiple times, and taking the level set of the output, we are able to generate geometry that has a fine-grained fractal texture.
+
+Furthermore, by using "portals," i.e regions where we evaluate the SDF at some transformation of a target region rather than SDF * versor function, which we use to introduce self-similarity in our corals.
 
 We use this technique for generating fractalized coral assets, and examples of resulting meshes are pictured below.
 
